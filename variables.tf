@@ -1,0 +1,44 @@
+# Project
+variable env_prefix {}
+variable project_name {}
+variable instance_count {}
+variable instance_type {}
+
+# My identity
+variable my_ips {}
+variable my_key_name {}
+variable my_public_key_file {}
+variable my_contact_email {}
+
+# Can be set in terraform.tfvars, however...
+# Preferably set through environment variable TF_VAR_iam_user
+# along with the secrets associated with that user
+# See the README for details
+variable iam_user {}
+
+# Operating system
+variable image_name_regex {
+    default = "amzn2-ami-kernel-*-hvm-*-x86_64-gp2"
+}
+
+# Spot request
+variable spot_price_max {
+    default = "0.05" # 0.05 dollar/hour x 730 hours/month = 36.50 dollars/month max
+}
+variable spot_type {
+    default =  "one-time" # "one-time" or "persistent"
+}
+
+# Networking info
+variable region {
+    default = "us-west-1"
+}
+variable avail_zone {
+    default = "us-west-1b"
+}
+variable vpc_cidr_block {
+    default = "10.0.0.0/16"
+}
+variable subnet_cidr_block {
+    default = "10.0.10.0/24"
+}
