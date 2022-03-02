@@ -1,8 +1,4 @@
-# Prints out the IP of the EC2 instance
-output "ec2_public_ip_1" {
-    value = module.ec2_instance[0].public_ip
-}
-
-output "ec2_public_ip_2" {
-    value = module.ec2_instance[1].public_ip
+# Prints out the IP(s) of the EC2 instance(s)
+output "ec2_public_ips" {
+    value = [for e in module.ec2_instance: e.public_ip]
 }
