@@ -21,7 +21,10 @@ variable image_name_regex {
     default = "amzn2-ami-kernel-*-hvm-*-x86_64-gp2"
 }
 
-# Spot request
+# Spot requests
+variable is_spot {
+    default = true
+}
 variable spot_price_max {
     default = "0.05" # 0.05 dollar/hour x 730 hours/month = 36.50 dollars/month max
 }

@@ -1,5 +1,5 @@
 
-This example Terraform project creates a specified number of AWS EC2 spot instances with SSH enabled and provides you with their public IP addresses.
+This example Terraform project creates a specified number of AWS EC2 instances with SSH enabled and provides you with their public IP addresses.
 
 # How to use this project
 
@@ -65,6 +65,7 @@ env_prefix = "dev"                                              # used to name r
 project_name = "terraform-tutorial"                             # used to name resources
 instance_count = 2
 instance_type = "t3.nano"
+is_spot = true                                                  # choose between spot or on-demand instances
 
 # SSH Access
 ssh_approved_ips = ["192.184.203.246/32", "169.229.59.10/32"]   # CIDR blocks for work and home
@@ -114,9 +115,11 @@ Another thing you will likely want to configure for your project is the firewall
 
 # 4. Run Terraform
 
-Run `terraform apply` to create the necessary AWS resources. First Terraform will show you what AWS resources it plans to create, and if you confirm, it will create those resources. 
+Run `terraform apply` to create the AWS resources. First Terraform will show you what AWS resources it plans to create (if any), and if you confirm, it will execute the plan. It will then output the public IP(s) of the instance(s).
 
-The first time you run `terraform apply`, Terraform will **not** show you the public IP(s) of the instance(s). This is because of the way that spot instances work. The Terraform module creates a _request_ for an instance, rather than creating an EC2 instance directly like it would with an on-demand instance. That means there may not be an IP address available yet by the time the first `terraform apply` finishes. Simply run `terraform refresh` afterwards to get the public IP(s). If you ever forget the IP addresses, running `terraform refresh` will fetch the latest state of the infrastructure and list them for you.
+IMPORTANT: If you are creating spot instances, the first time you run `terraform apply`, Terraform will **not** show you the public IP(s) of the instance(s). This is because of the way that spot instances work. The Terraform module creates a _request_ for an instance, rather than creating an EC2 instance directly like it would with an on-demand instance. That means there may not be an IP address available yet by the time the first `terraform apply` finishes. Simply run `terraform refresh` afterwards to get the public IP(s). If you ever forget the IP addresses, running `terraform refresh` will fetch the latest state of the infrastructure and list them for you.
+
+Another limitation of spot instance requests is that the AWS API does not allow users to set tags/names for the instances through the requests. This means that while on-demand instances created with this project will have names in the EC2 dashboard and tags with contact information, spot instances will not. However, you can still identify which instances are associated with your project by their security groups and key names. Those resources will also have contact information in the tags.
 
 Once you have the public IP(s), you should be able to SSH into each instance with `ssh ec2-user@<ec2_public_ip>` to confirm that the instance is up. You can then move on to configuring the server.
 

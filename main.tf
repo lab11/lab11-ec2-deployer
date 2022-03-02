@@ -93,7 +93,7 @@ module "ec2_instance" {
 
   count = var.instance_count
 
-  create_spot_instance = true
+  create_spot_instance = var.is_spot
   spot_price           = var.spot_price_max 
   spot_type            = var.spot_type
 

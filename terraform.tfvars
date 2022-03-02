@@ -3,6 +3,7 @@ env_prefix = "dev"                                              # used to name r
 project_name = "terraform-tutorial"                             # used to name resources
 instance_count = 2
 instance_type = "t3.nano"
+is_spot = true                                                  # choose between spot or on-demand instances
 
 # SSH Access
 ssh_approved_ips = ["192.184.203.246/32", "169.229.59.10/32"]   # CIDR blocks for work and home
