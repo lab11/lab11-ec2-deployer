@@ -55,7 +55,7 @@ In AWS, make an S3 bucket. The default settings are fine. Remember the name of t
 
 Run `terraform init` in this directory to install the required AWS modules and set up the initial state. Terraform will prompt you to provide the S3 bucket name and region, which is where it will store the state of the infrastructure.
 
-# 3. Configure the Terraform project
+# 3. Configure the Terraform Project
 
 This Terraform project requires you to supply a number of configuration variables in a file called `terraform.tfvars`. (It must be called this for Terraform to find it automatically, otherwise you will need to specify the name of the variable file on the command line.) I have provided an example file in the repo, which looks like this:
 
