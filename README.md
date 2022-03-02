@@ -120,7 +120,7 @@ The first time you run `terraform apply`, Terraform will **not** show you the pu
 
 Once you have the public IP(s), you should be able to SSH into each instance with `ssh ec2-user@<ec2_public_ip>` to confirm that the instance is up. You can then move on to configuring the server.
 
-## Project Clean Up
+# Project Clean Up
 
 The command `terraform destroy` will destroy everything Terraform has created for this project according to the state file, which can be useful for starting fresh or removing the deployment for billing purposes. Don't worry, you can easily recreate it later with another `terraform apply`. In fact, depending on how much configuration your server needs after creation, you can even `terraform destroy` every night and `terraform apply` in the morning.
 
