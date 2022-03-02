@@ -12,7 +12,7 @@ provider "aws" {
     default_tags {
         tags = {
             Name = "${var.env_prefix}-${var.project_name}"
-            contact_email = var.my_contact_email
+            contact_email = var.contact_email
             IAM_user = var.iam_user
         }
     }
@@ -47,7 +47,7 @@ resource "aws_security_group" "my-project-sg" {
         from_port        = 22
         to_port          = 22
         protocol         = "tcp"
-        cidr_blocks      = var.my_ips
+        cidr_blocks      = var.ssh_approved_ips
     }
 
     # Allows local processes like e.g. docker to grab resources from the internet
@@ -77,10 +77,10 @@ data "aws_ami" "latest-amazon-linux-image" {
 
 # Adds the user-provided public key to AWS (for SSH purposes)
 resource "aws_key_pair" "my-key-pair" {
-  key_name   = "${var.env_prefix}-${var.project_name}-${var.my_key_name}"
-  public_key = file(var.my_public_key_file)
+  key_name   = "${var.env_prefix}-${var.project_name}-${var.ssh_key_name}"
+  public_key = file(var.ssh_public_key_file)
   tags = {
-    Name = "${var.env_prefix}-${var.project_name}-${var.my_key_name}"
+    Name = "${var.env_prefix}-${var.project_name}-${var.ssh_key_name}"
   }
 }
 
