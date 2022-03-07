@@ -1,0 +1,14 @@
+---
+- name: Create S3 bucket for Terraform state
+  hosts: localhost
+  tasks:
+  - name: Create S3 bucket
+    amazon.aws.aws_s3:
+      bucket: '{{bucket_name}}'
+      region: '{{s3_region}}'
+      mode: create
+      permission: private
+      ignore_nonexistent_bucket: true
+    register: create_op
+
+  - debug: msg={{create_op.msg}}

@@ -1,0 +1,10 @@
+---
+plugin: aws_ec2
+regions: 
+  - us-west-1
+keyed_groups:
+  - key: security_groups[0].group_name
+    prefix: sg
+filters:
+  instance.group-name: '*-{{project_name}}-sg' 
+  # Spot instances don't have tags or names, so you have to filter by the name of the security group

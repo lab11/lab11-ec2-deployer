@@ -1,0 +1,12 @@
+---
+- name: Delete S3 bucket for Terraform state
+  hosts: localhost
+  tasks:
+  - name: Delete S3 bucket
+    amazon.aws.aws_s3:
+      bucket: '{{bucket_name}}'
+      mode: delete
+      ignore_nonexistent_bucket: true
+    register: delete_op
+
+  - debug: msg={{delete_op.msg}}
