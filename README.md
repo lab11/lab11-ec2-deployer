@@ -1,22 +1,30 @@
 
-This example Terraform project creates a specified number of AWS EC2 instances with SSH enabled and provides you with their public IP addresses.
+A Python3 tool for creating, configuring, and destroying EC2 instances using Terraform and Ansible.
 
 # How to use this project
 
-* Fork or create a new branch for your project
+* Create a new branch for your project
 
 Once you have your own version to modify, these are the steps for running the project:
 
 * Authenticate to AWS on the command line
-* Configure the Terraform backend
-* Configure the Terraform project
-* Run Terraform to create the instances
+* Configure the Terraform project to reflect your specific needs
+* Run `ec2_instances.py create` to create the instance(s)
 
-See the note at the end for how to clean up your project when you're done with it.
+When you're completely done with your project and want to delete the instance(s) and supporting AWS infrastructure, run `ec2_instances.py destroy` to tear it down. You can easily recreate it with another `python ec2_instances.py create` command.
+
+# 0. Installation Requirements
+
+You will need to install: 
+- Python 3.7+. 
+- Terraform 
+- Ansible
+
+If you forget any prerequisites, the `ec2_instances.py` script will let you know.
 
 # 1. Authenticate to AWS
 
-Terraform needs AWS credentials in order to create AWS resources. This means you will need to 1) make sure you have an AWS user on the IAM service, 2) obtain your credentials, and 3) make the credentials available to Terraform.
+Terraform needs AWS credentials in order to create AWS resources. This means you will need to 1) make sure you have an AWS user on the IAM service, 2) obtain your credentials, and 3) make the credentials available to Terraform and Ansible via environment variables.
 
 ## Find/create your AWS IAM user
 
@@ -26,9 +34,9 @@ In the Lab 11 AWS web portal, navigate to the IAM service. There should be a use
 
 You can find the secrets for your user by using the IAM service's web interface. The two secrets you want are the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
 
-## Make the credentials available to Terraform
+## Make the credentials available to Terraform and Ansible
 
-I prefer to do this through environment variables. I created a local file called `~/.aws/usr/meghan` which looks something like this:
+This project accesses the AWS credentials through environment variables. I created a local file called `~/.aws/usr/meghan` which looks something like this:
 
 ```
 export TF_VAR_iam_user=meghan
@@ -39,30 +47,20 @@ export AWS_SECRET_ACCESS_KEY=***
 
 The two "TF_VAR" variables are not required for Terraform to connect to AWS, but this project uses it to tag the various AWS resources it creates with contact info for auditing purposes.
 
-To make my AWS credentials available to Terraform, I simply source the file, like so:
+To make my AWS credentials available to Terraform and Ansible, I simply source the file, like so:
 
 `source ~/.aws/usr/meghan`
 
 Note that this approach does mean storing your credentials in plain text on your computer, which could be dangerous, especially if your user has broad permissions. This solution had the best balance of security and complexity for me, but look up safer alternatives if you have concerns.
 
-# 2. Configure the Terraform Backend
+# 2. Configure the Project
 
-Terraform stores the current state of the infrastructure as JSON in a flat file. Storing state allows it to do things like avoid recreating resources that already exist, modify existing resources with minor changes, and destroy everything it has created.
-
-This state can be stored locally on one computer, but is best stored in the cloud. Storing the state in the cloud allows teams on different computers to synchronize their Terraform projects. It also provides better reliability and access to backups. This project is set up to use AWS S3 as the backend storage for the state file.
-
-In AWS, make an S3 bucket. The default settings are fine. Remember the name of the bucket (e.g. `<project name>-terraform`) and the region you created it in (e.g. `us-west-1`).
-
-Run `terraform init` in this directory to install the required AWS modules and set up the initial state. Terraform will prompt you to provide the S3 bucket name and region, which is where it will store the state of the infrastructure.
-
-# 3. Configure the Terraform Project
-
-This Terraform project requires you to supply a number of configuration variables in a file called `terraform.tfvars`. (It must be called this for Terraform to find it automatically, otherwise you will need to specify the name of the variable file on the command line.) I have provided an example file in the repo, which looks like this:
+This project requires you to supply a number of configuration variables in a file called `terraform.tfvars`. I have provided an example file in the repo, which looks like this:
 
 ```
 # Project
 env_prefix = "dev"                                              # used to name resources
-project_name = "terraform-tutorial"                             # used to name resources
+project_name = "example-deployment"                             # used to name resources
 instance_count = 2
 instance_type = "t3.nano"
 is_spot = true                                                  # choose between spot or on-demand instances
@@ -75,7 +73,11 @@ ssh_public_key_file = "/home/meghanix/.ssh/id_ed25519.pub"
 
 You should change these variables to reflect your own project and SSH access information. 
 
-Keep in mind that if you are working with a team, there is only one set of approved IPs and one SSH key, which could cause some issues. Some options to deal with this: 1) Each team member runs `terraform apply` to change the approved IPs/SSH key to their own before accessing the server; 2) the approved IPs list contains the IP addresses of the whole team, and the first Terraform user manually adds more SSH keys in the .authorized_keys file on the server afterwards; or 3) the approved IPs list contains IP addresses of the whole team, and the team creates a new SSH key-pair for accessing this server and (securely) shares it among themselves.
+IMPORTANT NOTE #1: For people working on a team, there is an important concept to understand. The current state of the infrastructure, managed by Terraform, is stored in an S3 bucket. This allows team members to synchronize their Terraform projects. **The project name determines where Terraform looks for the infrastructure state.** If multiple team members want to be able to modify the infrastructure, they must have the same `project_name` set in `terraform.tfvars` to synchronize their state. 
+
+IMPORTANT NOTE #2: If you want to change the project name after you have already created infrastructure, make sure you destroy the existing infrastructure first. Otherwise the ec2_instance.py script will use Ansible to create a new remote state bucket for Terraform and the infrastructure under the old name will stay running. This would be a great thing to fix in the script someday.
+
+IMPORTANT NOTE #3: If you are working with a team, note that there is only one set of approved IPs and one SSH key, which could cause some issues. Some options to deal with this: 1) Each team member runs `python ec2_instances.py create` to change the approved IPs/SSH key to their own before accessing the server (not great); 2) the approved IPs list contains the IP addresses of the whole team, and the first Terraform user uses Ansible to add more SSH keys in the .authorized_keys file on the server afterwards; or 3) the approved IPs list contains IP addresses of the whole team, and the team creates a new SSH key-pair for accessing this server and (securely) shares it among themselves.
 
 ## Additional variables
 
@@ -113,20 +115,10 @@ Another thing you will likely want to configure for your project is the firewall
     }
 ```
 
-# 4. Run Terraform
+# 3. Run the Helper Script
 
-Run `terraform apply` to create the AWS resources. First Terraform will show you what AWS resources it plans to create (if any), and if you confirm, it will execute the plan. It will then output the public IP(s) of the instance(s). If you ever forget the IP addresses, running `terraform refresh` will fetch the latest state of the infrastructure and list them for you again.
+Run `python ec2_instances.py create` to create the AWS resources. If you forget the IP addresses, running `python ec2_instances.py create` will fetch the latest state of the infrastructure and list them for you again.
 
 Once you have the public IP(s), you should be able to SSH into each instance with `ssh ec2-user@<ec2_public_ip>` to confirm that the instance is up. You can then move on to configuring the server.
 
 Note: One limitation of spot instance requests is that the AWS API does not allow users to set tags/names for the instances through the requests. This means that while on-demand instances created with this Terraform project will have names in the EC2 dashboard and tags with contact information, spot instances will not. It is strongly encouraged that you manually add name and contact email tags to spot instances. On the dashboard, you can identify which spot instances are associated with your project by their security groups and key names. Those resources will also have contact information in the tags.
-
-# Project Cleanup
-
-The command `terraform destroy` will destroy everything Terraform has created for this project according to the state file, which can be useful for starting fresh or removing the deployment for billing purposes. Don't worry, you can easily recreate it later with another `terraform apply`. In fact, depending on how much configuration your server needs after creation, you can even `terraform destroy` every night and `terraform apply` in the morning.
-
-If you ever want to completely decommission the deployment and erase all traces of it forever:
-
-* Run `terraform destroy` to delete all the AWS infrastructure
-* Manually delete the S3 bucket that holds the Terraform remote state
-* Remove any AWS_\* and TF_VAR_\* environment variables for this project from your system
