@@ -78,7 +78,7 @@ def create_instances():
     print("Initializing Terraform project...")
     os.chdir("./terraform")
     # Run terraform init
-    execute(["terraform", "init", f'-backend-config=bucket={tf_bucket}', f'-backend-config=region={s3_region}'], "Problem with initializing Terraform.")
+    execute(["terraform", "init", f'-backend-config=bucket={tf_bucket}', f'-backend-config=region={s3_region}'], "Problem initializing Terraform.")
     os.chdir("..")
     sys.exit()
     print(separator)
@@ -118,7 +118,10 @@ def destroy_instances():
     terraform_config = get_terraform_config()    
     project_name = terraform_config["project_name"]
 
-    confirm(f"Final confirmation: Do you want to delete all instances and supporting infrastructure associated with {project_name}?")
+    print("")
+    print(subheading("Final confirmation"))
+    confirm(f"Do you want to delete all instances and supporting infrastructure associated with {project_name}?")
+    print(separator)
 
     print(heading("Destroying AWS Infrastructure"))
     print(separator)
@@ -144,6 +147,12 @@ def destroy_instances():
     print("Cleaning up local Terraform directory...")
     os.chdir("./terraform")
     # Delete .terraform folder, terraform.tfstate, terraform.tfstate.backup, and lock file - if present
+    existing_files = execute(["ls", "-la"])
+    files_to_delete = [".terraform", ".terraform.tfstate", ".terraform.tfstate.backup"]
+    for filename in files_to_delete:
+        if filename in existing_files:
+            print(f"removing {filename}")
+            execute(["rm", "-rf", filename])
     os.chdir("..")
     print(separator)
 
@@ -179,7 +188,7 @@ def check_prerequisites():
 
     # Confirm that terraform.tfvars is accurate
     print(subheading("Infrastructure configuration"))
-    confirm("Did you check terraform/terraform.tfvars to make sure it reflects your project (especially the SSH credentials)?")
+    confirm("Did you check terraform/terraform.tfvars to make sure it reflects your project and access credentials?")
     print(separator)
 
 
