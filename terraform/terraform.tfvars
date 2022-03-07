@@ -1,6 +1,6 @@
 # Project
 env_prefix = "dev"                                              # used to name resources
-project_name = "ansible-tutorial"                             # used to name resources
+project_name = "terraform-tutorial"                             # used to name resources
 instance_count = 3
 instance_type = "t3.nano"
 is_spot = true                                                  # choose between spot or on-demand instances
