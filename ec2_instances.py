@@ -3,6 +3,7 @@ import sys
 import os
 #import boto3, botocore
 import importlib.util
+import re
 
 separator = "\n"
 indent = "  "
@@ -10,6 +11,7 @@ instance_config_filename = "fresh_installation_playbooks.txt"
 bucket_name_prefix = "lab11-"
 bucket_name_suffix = "-terraform"
 s3_region = 'us-west-1'
+terraform_output_var = "ec2_public_ips"
 
 def create_instances():
     # Check all the tool dependencies and configs
@@ -80,23 +82,29 @@ def create_instances():
     # Run terraform init
     execute(["terraform", "init", f'-backend-config=bucket={tf_bucket}', f'-backend-config=region={s3_region}'], "Problem initializing Terraform.")
     os.chdir("..")
-    sys.exit()
     print(separator)
 
     print("Running Terraform...")
     os.chdir("./terraform")
     # Run terraform apply --auto-aprove
-    # terraform_output = execute(["terraform", "apply", "--auto-approve"], "Something went wrong with 'terraform apply'")
+    terraform_output = execute(["terraform", "apply", "--auto-approve"], "Something went wrong with 'terraform apply'")
     # # Get IP address(es) of instance(s)
+    ip_output_block_matcher = re.compile("ec2_public_ips = \[[^\]]*\]")
+    ip_output_blocks = ip_output_block_matcher.findall(terraform_output)
+    if len(ip_output_blocks) == 0:
+        print("Could not find IP addresses in Terraform output! Exiting...")
+        sys.exit()
+    ip_addr_matcher = re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b")
+    public_ip_addresses = ip_addr_matcher.findall(ip_output_blocks[-1])
     os.chdir("..")
     print(separator)
 
-    print(f"Running Ansible to ensure the new EC2 instance{s} {are} correctly tagged...")
-    os.chdir("./ansible")
-    # Run ansible tag_ec2_instances
-    # If something goes wrong in this step, report error and IP addresses, then exit
-    os.chdir("..")
-    print(separator)
+    # print(f"Running Ansible to ensure the new EC2 instance{s} {are} correctly tagged...")
+    # os.chdir("./ansible")
+    # # Run ansible tag_ec2_instances
+    # # If something goes wrong in this step, report error and IP addresses, then exit
+    # os.chdir("..")
+    # print(separator)
 
     # Run instance configuration playbooks
     # if len(config_playbooks) > 0:
@@ -107,9 +115,11 @@ def create_instances():
     # print(separator)
 
     # Report IP addresses
-    print(f"Your instance{s} {are} available at:")
-    print(f"<IP{s}>")
+    display_summary(tf_bucket, public_ip_addresses)
 
+############################# 
+# DESTROYING INFRASTRUCTURE #
+#############################
 def destroy_instances():
     # Check all the tool dependencies and configs
     check_prerequisites()
@@ -147,8 +157,8 @@ def destroy_instances():
     print("Cleaning up local Terraform directory...")
     os.chdir("./terraform")
     # Delete .terraform folder, terraform.tfstate, terraform.tfstate.backup, and lock file - if present
-    existing_files = execute(["ls", "-la"])
-    files_to_delete = [".terraform", ".terraform.tfstate", ".terraform.tfstate.backup"]
+    existing_files = execute(["ls", "-la"], print_to_terminal=False)
+    files_to_delete = [".terraform", ".terraform.tfstate", ".terraform.tfstate.backup", ".terraform.lock.hcl"]
     for filename in files_to_delete:
         if filename in existing_files:
             print(f"removing {filename}")
@@ -158,14 +168,12 @@ def destroy_instances():
 
     print("Done.")
 
-
+########################## 
+# CHECKING CONFIGURATION #
+##########################
 def check_prerequisites():
-    print(heading("Welcome to the Lab11 EC2 Deployer helper script!"))
+    print(heading("Welcome to the Lab11 EC2 Deployer script!"))
     print(separator)
-
-    ########################## 
-    # CHECKING CONFIGURATION #
-    ##########################
 
     # check that all tools are installed
     print(subheading("Checking for Terraform installation"))
@@ -191,6 +199,9 @@ def check_prerequisites():
     confirm("Did you check terraform/terraform.tfvars to make sure it reflects your project and access credentials?")
     print(separator)
 
+########################## 
+#    HELPER FUNCTIONS    #
+##########################
 
 def heading(title, sym="#", margin="   ", has_pad=True):
     mid = f"{sym}{margin}{title}{margin}{sym}"
@@ -254,16 +265,36 @@ def get_terraform_config(tfvars_file="./terraform/terraform.tfvars"):
 def get_terraform_bucket_name(project_name):
     return f"{bucket_name_prefix}{project_name}{bucket_name_suffix}"
 
-def execute(cmd, err_msg):
+def execute(cmd, err_msg="", print_to_terminal=True):
+    if err_msg == "":
+        err_msg = f"Error while executing {cmd}"
     cmd_output = ""
     with subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
         for line in p.stdout:
-            print(line, end='')
+            if print_to_terminal:
+                print(line, end='')
             cmd_output += line
     if p.returncode != 0:
         print(err_msg)
         sys.exit()    
     return cmd_output
+
+def display_summary(bucket_name, ip_list):
+    print(heading("Summary", margin="          "))
+    print("")
+    display_terraform_state_info(bucket_name)
+    print("")
+    display_ips(ip_list)
+
+def display_terraform_state_info(bucket_name):
+    print(f"Terraform remote state for this project is stored in the following S3 bucket:\n{bucket_name}")
+
+def display_ips(ip_list):
+    print("Your instances are available at:")
+    print("\n".join(ip_list))
+    print("")
+    print("SSH access: ssh ec2-user@<ip_address>") 
+
 
 if __name__=="__main__":
     usage = "\nUsage:\n\tpython ec2_instances.py create\n\tpython ec2_instances.py destroy\n"
