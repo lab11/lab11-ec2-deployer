@@ -1,8 +1,9 @@
 # Project
 env_prefix = "dev"                                              # used to name resources
 project_name = "example-deployment"                             # used to name resources
-instance_count = 3
+instance_count = 2
 instance_type = "t3.nano"
+region = "us-west-1"
 is_spot = true                                                  # choose between spot or on-demand instances
 
 # SSH Access

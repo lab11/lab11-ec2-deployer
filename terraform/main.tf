@@ -12,8 +12,9 @@ provider "aws" {
     default_tags {
         tags = {
             Name = "${var.env_prefix}-${var.project_name}"
-            contact_email = var.contact_email
+            Contact_email = var.contact_email
             IAM_user = var.iam_user
+            Project = var.project_name
         }
     }
 }
