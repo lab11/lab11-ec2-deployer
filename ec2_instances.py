@@ -224,8 +224,14 @@ def check_installed(program, indent=""):
 def check_module(module, indent=""):
     spec = importlib.util.find_spec(module)
     if spec is None:
-        print(f"{indent}Python library {module} is not installed. Run 'pip install -r requirements.txt'")
-        sys.exit()
+        print(f"Did not find {module}, running 'pip install -r requirements.txt'")
+        execute(["pip", "install", "-r", "requirements.txt"])
+        spec = importlib.util.find_spec(module)
+        if spec is None:
+            print(f"{indent}Python library {module} is not installed. Run 'pip install -r requirements.txt'")
+            sys.exit()
+        else:
+            print(f"Found {module}")
     else:
         print(f"Found {module}")
 
