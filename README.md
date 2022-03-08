@@ -115,7 +115,7 @@ Another thing you will likely want to configure for your project is the firewall
     }
 ```
 
-# 3. Run the Helper Script
+# 3. Run the Script
 
 Run `python ec2_instances.py create` to create the AWS resources. If you forget the IP addresses, running `python ec2_instances.py create` will fetch the latest state of the infrastructure and list them for you again.
 
