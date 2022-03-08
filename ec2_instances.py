@@ -1,3 +1,4 @@
+from ipaddress import ip_address
 import subprocess
 import sys
 import os
@@ -99,12 +100,21 @@ def create_instances():
     os.chdir("..")
     print(separator)
 
-    # print(f"Running Ansible to ensure the new EC2 instance{s} {are} correctly tagged...")
-    # os.chdir("./ansible")
-    # # Run ansible tag_ec2_instances
-    # # If something goes wrong in this step, report error and IP addresses, then exit
-    # os.chdir("..")
-    # print(separator)
+    print(f"Running Ansible to ensure the new EC2 instance{s} {are} correctly tagged...")
+    os.chdir("./ansible")
+    # prepare the variables
+    project_name = terraform_config["project_name"]
+    env_prefix = terraform_config["env_prefix"]
+    region = terraform_config["region"]
+    IAM_user = os.getenv("TF_VAR_iam_user")
+    contact_email = os.getenv("TF_VAR_contact_email")
+    # Run ansible-playbook tag_ec2_instances.yaml --extra-vars "project_name={project_name} contact_email={contact_email}" etc.
+    ansible_vars = f"project_name={project_name} contact_email={contact_email} env={env_prefix} region={region} IAM_user={IAM_user}"
+    # Run command. If something goes wrong in this step, report error and IP addresses, then exit
+    error_msg = summary_string(tf_bucket, public_ip_addresses) + "\WARNING: Something went wrong while tagging instances."
+    ansible_output = execute(["ansible-playbook", "tag-ec2-instances.yaml", '--extra-vars', ansible_vars], error_msg)
+    os.chdir("..")
+    print(separator)
 
     # Run instance configuration playbooks
     # if len(config_playbooks) > 0:
@@ -115,7 +125,7 @@ def create_instances():
     # print(separator)
 
     # Report IP addresses
-    display_summary(tf_bucket, public_ip_addresses)
+    print(summary_string(tf_bucket, public_ip_addresses))
 
 ############################# 
 # DESTROYING INFRASTRUCTURE #
@@ -285,22 +295,23 @@ def execute(cmd, err_msg="", print_to_terminal=True):
         sys.exit()    
     return cmd_output
 
-def display_summary(bucket_name, ip_list):
-    print(heading("Summary", margin="          "))
-    print("")
-    display_terraform_state_info(bucket_name)
-    print("")
-    display_ips(ip_list)
+def summary_string(bucket_name, ip_list):
+    s = heading("Summary", margin="          ")
+    s += "\n\n"
+    s += terraform_state_summary_string(bucket_name)
+    s += "\n\n"
+    s += ip_address_summary_string(ip_list)
+    return s
 
-def display_terraform_state_info(bucket_name):
-    print(f"Terraform remote state for this project is stored in the following S3 bucket:\n{bucket_name}")
+def terraform_state_summary_string(bucket_name):
+    return f"Terraform remote state for this project is stored in the following S3 bucket:\n{bucket_name}"
 
-def display_ips(ip_list):
-    print("Your instances are available at:")
-    print("\n".join(ip_list))
-    print("")
-    print("SSH access: ssh ec2-user@<ip_address>") 
-
+def ip_address_summary_string(ip_list):
+    s = "Your instances are available at:\n"
+    s += "\n".join(ip_list)
+    s += "\n\n"
+    s += "SSH access: ssh ec2-user@<ip_address>"
+    return s
 
 if __name__=="__main__":
     usage = "\nUsage:\n\tpython ec2_instances.py create\n\tpython ec2_instances.py destroy\n"

@@ -1,0 +1,24 @@
+---
+- name: Gather info about all EC2 instances for this project
+  hosts: localhost
+  tasks:
+  - name: Gather info about all EC2 instances for this project
+    amazon.aws.ec2_instance_info:
+      filters:
+        instance.group-name: '*-{{project_name}}-sg'
+    register: project_ec2_instances
+
+  - name: Ensure tags are present on all instances
+    amazon.aws.ec2_tag:
+      region: '{{region}}'
+      resource: '{{item.instance_id}}'
+      state: present
+      tags:
+        Name: '{{env}}-{{project_name}}-server-{{i+1}}'
+        Contact_email: '{{contact_email}}'
+        Project: '{{project_name}}'
+        IAM_user: '{{IAM_user}}'
+
+    loop: '{{project_ec2_instances.instances}}'
+    loop_control:
+      index_var: i
