@@ -8,6 +8,9 @@ import re
 
 separator = "\n"
 indent = "  "
+ansible_dir = "./ansible"
+terraform_dir = "./terraform"
+post_creation_dir = "./post-creation"
 instance_config_filename = "fresh_installation_playbooks.txt"
 bucket_name_prefix = "lab11-"
 bucket_name_suffix = "-terraform"
