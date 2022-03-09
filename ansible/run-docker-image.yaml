@@ -72,4 +72,3 @@
         published_ports:
           - 80:80
         pull: yes
-git
