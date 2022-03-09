@@ -24,7 +24,7 @@ If you forget any prerequisites, the `ec2_instances.py` script will let you know
 
 # 1. Authenticate to AWS
 
-Terraform needs AWS credentials in order to create AWS resources. This means you will need to 1) make sure you have an AWS user on the IAM service, 2) obtain your credentials, and 3) make the credentials available to Terraform and Ansible via environment variables.
+Terraform and Ansible need AWS credentials in order to create AWS resources. This means you will need to 1) make sure you have an AWS user on the IAM service, 2) obtain your credentials, and 3) make the credentials available to Terraform and Ansible via environment variables.
 
 ## Find/create your AWS IAM user
 
@@ -74,9 +74,9 @@ ssh_public_key_file = "/home/meghanix/.ssh/id_ed25519.pub"
 
 You should change these variables to reflect your own project and SSH access information. 
 
-IMPORTANT NOTE #1: For people working on a team, there is an important concept to understand. The current state of the infrastructure, managed by Terraform, is stored in an S3 bucket. This allows team members to synchronize their Terraform projects. **The project name determines where Terraform looks for the infrastructure state.** If multiple team members want to be able to modify the infrastructure, they must have the same `project_name` set in `terraform.tfvars` to synchronize their state. 
+IMPORTANT NOTE #1: For people working on a team, there is an important concept to understand. The current state of the infrastructure, managed by Terraform, is stored in an S3 bucket. This allows team members to synchronize their Terraform projects. **The project name and environment determine where Terraform looks for the infrastructure state.** The script checks for an S3 bucket named "lab11-<env_prefix>-<project_name>-terraform", creates it if necessary, and tells Terraform to use that bucket for its remote state. If multiple team members want to be able to modify the infrastructure, they must have the same `project_name` and `env_prefix` set in `terraform.tfvars` to synchronize their state. 
 
-IMPORTANT NOTE #2: If you want to change the project name after you have already created infrastructure, make sure you destroy the existing infrastructure first. Otherwise the ec2_instance.py script will use Ansible to create a new remote state bucket for Terraform and the infrastructure under the old name will stay running. This would be a great thing to fix in the script someday.
+IMPORTANT NOTE #2: Related to the above, you should treat `project_name` and `env_prefix` as immutable. If you have already created infrastructure, be careful when changing the project name or environment. Changing the project name or the environment will not change the AWS tags in the existing deployment - instead, it will create an entirely new deployment, while leaving the old one running. This is because the script will create a new S3 bucket with a new name based on the project and environment and initialize Terraform with the fresh new remote state. If you want to modify the project name or environment associated with your resources instead of creating multiple deployments, make sure you destroy the existing infrastructure first with `python ec2_instances.py destroy`. If you forget, just change the project name and environment back to the original in `terraform.tfvars` and then run the destroy command. This would be a great thing to fix in the script someday (Terraform itself is certainly capable of modifying the Name and Env tags without tearing everything down, so long as you don't change the remote state location).
 
 IMPORTANT NOTE #3: If you are working with a team, note that there is only one set of approved IPs and one SSH key, which could cause some issues. Some options to deal with this: 1) Each team member runs `python ec2_instances.py create` to change the approved IPs/SSH key to their own before accessing the server (not great); 2) the approved IPs list contains the IP addresses of the whole team, and the first Terraform user uses Ansible to add more SSH keys in the .authorized_keys file on the server afterwards; or 3) the approved IPs list contains IP addresses of the whole team, and the team creates a new SSH key-pair for accessing this server and (securely) shares it among themselves.
 
@@ -120,7 +120,7 @@ Another thing you will likely want to configure for your project is the firewall
 
 After the servers are created, you will likely want to install and run things on them. Ansible is a great way to perform these fresh installation tasks automatically. With Ansible, you can install packages and libraries, start services, run Docker images, clone Git repos, transfer files, run programs, and so much more. Teaching Ansible is outside the scope of this README, but consider learning it if you're not already familiar with it. It can be the final step in truly automatic deployment of your application.
 
-This script will look for a file called `fresh_installation_playbooks.txt` in the  `post-creation` folder. This file should contain a list of Ansible playbooks and their variables that should be run after the servers are created. The playbooks themselves should also be located in the `post-creation` folder. The script will tell you in advance what playbooks it has found (if any), and what it plans to run.
+The `ec2_instances.py` script will look for a file called `fresh_installation_playbooks.txt` in the  `post-creation` folder. This file should contain a list of Ansible playbooks and their variables that should be run after the servers are created. The playbooks themselves should also be located in the `post-creation` folder. The script will tell you in advance what playbooks it has found (if any), and what it plans to run.
 
 To skip this step, simply leave the `fresh_installation_playbooks.txt` file blank or delete it.
 
