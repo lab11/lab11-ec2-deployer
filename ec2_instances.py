@@ -35,24 +35,25 @@ def create_instances():
     confirm(f"Did you check terraform/main.tf to confirm that the firewall rules are correct for your instance{s}?")
     print(separator)
 
-    # Confirm the instance configuration actions
-    # print(subheading("Server configuration"))
-    # print(f"Checking for {instance_config_filename}...")
-    # config_playbooks = []
-    # try:
-    #     with open(instance_config_filename) as f:
-    #         print(f"Found {instance_config_filename}")
-    #         config_playbooks = f.readlines()
-    # except FileNotFoundError:
-    #     print(f"Could not find {instance_config_filename}.")
-    # #print(config_playbooks)
-    # num_config_playbooks = len(config_playbooks)
-    # if num_config_playbooks == 0:
-    #     confirm(f"\nAre you sure you don't want to use Ansible to automatically install or run anything on the server{s} after {they} {are} created?")
-    # else:
-    #     playbook_list = "\n".join(config_playbooks)
-    #     confirm(f"After the instance{s} {are} created, these Ansible playbooks will be run in this order:\n{playbook_list}")
-    # print(separator)
+    # Confirm the post-creation configuration
+    print(subheading("Server configuration"))
+    print(f"Checking for {instance_config_filename}...")
+    config_playbooks = []
+    try:
+        with open(instance_config_filename) as f:
+            print(f"Found {instance_config_filename}")
+            config_playbooks = f.readlines()
+        config_playbooks = [p.strip() for p in config_playbooks]
+    except FileNotFoundError:
+        print(f"Could not find {instance_config_filename}.")
+    num_config_playbooks = len(config_playbooks)
+    print(f"{num_config_playbooks} Ansible playbooks found.")
+    if num_config_playbooks == 0:
+        confirm(f"\nAre you sure you don't want to use Ansible to automatically install or run anything on the server{s} after {they} {are} created?")
+    else:
+        playbook_list = "\n".join(["   " + p.strip() for p in config_playbooks])
+        confirm(f"\nAfter the instance{s} {are} created, these Ansible playbooks will be run in this order:\n\n{playbook_list}")
+    print(separator)
 
     ########################### 
     # CREATING INFRASTRUCTURE #
@@ -74,7 +75,7 @@ def create_instances():
         print("\nWARNING: An S3 bucket for storing Terraform remote state for this project already exists!\nThere are two possibilities:\n\n" \
             + "1. S3 bucket names are global, so the name could already be taken by someone else, in which case you should change the project name to something more unique.\n" \
             + "2. This project already has infrastructure state associated with it, and Terraform will synchronize with the existing remote state.\n")
-        confirm("Did you expect an existing S3 bucket for Terraform remote state for this project?")
+        confirm("Did you expect existing state for this project?")
     os.chdir("..")
     print(separator)
 
@@ -111,21 +112,26 @@ def create_instances():
     # Run ansible-playbook tag_ec2_instances.yaml --extra-vars "project_name={project_name} contact_email={contact_email}" etc.
     ansible_vars = f"project_name={project_name} contact_email={contact_email} env={env_prefix} region={region} IAM_user={IAM_user}"
     # Run command. If something goes wrong in this step, report error and IP addresses, then exit
-    error_msg = summary_string(tf_bucket, public_ip_addresses) + "\WARNING: Something went wrong while tagging instances."
+    error_msg = summary_string(tf_bucket, public_ip_addresses) + "\ERROR: Something went wrong while tagging instances."
     ansible_output = execute(["ansible-playbook", "tag-ec2-instances.yaml", '--extra-vars', ansible_vars], error_msg)
     os.chdir("..")
     print(separator)
 
     # Run instance configuration playbooks
-    # if len(config_playbooks) > 0:
-    #   os.chdir("./ansible")
-    #     print(f"Running Ansible playbooks to configure the new instance{s}...")
-    # # If something goes wrong in this step, report error and IP addresses, then exit
-    # os.chdir("..")
-    # print(separator)
+    if len(config_playbooks) > 0:
+        os.chdir("./ansible")
+        print(f"Running Ansible playbooks to configure the new instance{s}...")
+        for pb in config_playbooks:
+            error_msg = summary_string(tf_bucket, public_ip_addresses) + f"ERROR: Something went wrong executing {pb}. Server configuration may not have completed."
+            execute(["ansible-playbook", pb, "-i", "inventory_aws_ec2.yaml"], error_msg)
+    # If something goes wrong in this step, report error and IP addresses, then exit
+    os.chdir("..")
+    print(separator)
 
     # Report IP addresses
     print(summary_string(tf_bucket, public_ip_addresses))
+
+
 
 ############################# 
 # DESTROYING INFRASTRUCTURE #
