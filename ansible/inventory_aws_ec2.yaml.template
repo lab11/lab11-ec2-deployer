@@ -1,0 +1,10 @@
+---
+plugin: aws_ec2
+regions: 
+  - REGION
+keyed_groups:
+  - key: tags.Name
+    prefix: name
+filters:
+  tag:Project: PROJECT
+  tag:Env: ENV
