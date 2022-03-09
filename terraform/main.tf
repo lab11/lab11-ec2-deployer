@@ -15,6 +15,7 @@ provider "aws" {
             Contact_email = var.contact_email
             IAM_user = var.iam_user
             Project = var.project_name
+            Env = var.env_prefix
         }
     }
 }

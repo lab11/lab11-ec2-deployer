@@ -18,6 +18,7 @@
         Contact_email: '{{contact_email}}'
         Project: '{{project_name}}'
         IAM_user: '{{IAM_user}}'
+        Env: '{{env}}'
 
     loop: '{{project_ec2_instances.instances}}'
     loop_control:
