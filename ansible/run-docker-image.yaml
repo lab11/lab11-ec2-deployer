@@ -1,0 +1,74 @@
+---
+
+- name: Wait for ssh connection
+  hosts: all
+  gather_facts: False
+  tasks:
+    - name: Ensure SSH port is open
+      wait_for:
+        port: 22
+        delay: 10
+        timeout: 120
+        host:  '{{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}'
+      vars:
+        ansible_connection: local
+
+- name: Install yum packages
+  hosts: all
+  become: yes
+  tasks:
+  - name: Make sure python3 and docker are installed
+    vars:
+      ansible_python_interpreter: /usr/bin/python
+    yum:
+      name: 
+        - python3
+        - docker
+      state: latest
+      update_cache: yes
+  - name: Install python for docker
+    pip:
+      name: docker
+
+# - name: Install Docker Compose
+#   hosts: scarlett_server
+#   become: yes
+#   tasks:
+#     - name: Make sure Docker Compose is installed
+#       get_url:
+#         url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-{{lookup('pipe', 'uname -m')}}"
+#         dest: /usr/local/bin/docker-compose
+#         mode: +x
+
+- name: Add ec2-user to docker group
+  hosts: all
+  become: yes
+  tasks:
+    - name: Add ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+    - name: Reconnect to server session
+      meta: reset_connection
+
+- name: Run Docker service
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure Docker is running
+      systemd:
+        name: docker
+        state: started
+
+# Note: You will need to modify the firewall rules in main.tf to make sure port 80 is open
+- name: Run Docker image
+  hosts: all
+  tasks:
+    - name: Pull and run the latest image
+      community.docker.docker_container:
+        name: nginx #'{{container_name}}' #scarlett
+        image: nginx #'{{image_name}}' #public.ecr.aws/w2e6b5j5/scarlett-slack:latest
+        published_ports:
+          - 80:80
+        pull: yes
