@@ -11,11 +11,13 @@ indent = "  "
 ansible_dir = "./ansible"
 terraform_dir = "./terraform"
 post_creation_dir = "./post-creation"
-instance_config_filename = "fresh_installation_playbooks.txt"
+instance_config_file = "fresh_installation_playbooks.txt"
 bucket_name_prefix = "lab11-"
 bucket_name_suffix = "-terraform"
 s3_region = 'us-west-1'
 terraform_output_var = "ec2_public_ips"
+inventory_template = "inventory_aws_ec2.yaml.template"
+inventory_filename = "inventory_aws_ec2.yaml"
 
 def create_instances():
     # Check all the tool dependencies and configs
@@ -40,15 +42,16 @@ def create_instances():
 
     # Confirm the post-creation configuration
     print(subheading("Server configuration"))
-    print(f"Checking for {instance_config_filename}...")
+    os.chdir(post_creation_dir)
+    print(f"Checking for {instance_config_file}...")
     config_playbooks = []
     try:
-        with open(instance_config_filename) as f:
-            print(f"Found {instance_config_filename}")
+        with open(instance_config_file) as f:
+            print(f"Found {instance_config_file}")
             config_playbooks = f.readlines()
         config_playbooks = [p.strip() for p in config_playbooks]
     except FileNotFoundError:
-        print(f"Could not find {instance_config_filename}.")
+        print(f"Could not find {instance_config_file}.")
     num_config_playbooks = len(config_playbooks)
     print(f"{num_config_playbooks} Ansible playbooks found.")
     if num_config_playbooks == 0:
@@ -56,6 +59,7 @@ def create_instances():
     else:
         playbook_list = "\n".join(["   " + p.strip() for p in config_playbooks])
         confirm(f"\nAfter the instance{s} {are} created, these Ansible playbooks will be run in this order:\n\n{playbook_list}")
+    os.chdir('..')
     print(separator)
 
     ########################### 
@@ -67,7 +71,7 @@ def create_instances():
 
     print("Running Ansible to ensure there is an S3 bucket for the Terraform remote state...")
     # Run ansible create_s3_bucket.yaml
-    os.chdir("./ansible")
+    os.chdir(ansible_dir)
     tf_bucket = get_terraform_bucket_name(terraform_config['project_name'])
     #ansible_command = subprocess.run(["ansible-playbook", "create-s3-bucket.yaml", '--extra-vars', f'bucket_name={tf_bucket}'], stdout=subprocess.PIPE, text=True)
     error_msg = "Problem creating S3 bucket for Terraform remote state."
@@ -83,14 +87,14 @@ def create_instances():
     print(separator)
 
     print("Initializing Terraform project...")
-    os.chdir("./terraform")
+    os.chdir(terraform_dir)
     # Run terraform init
     execute(["terraform", "init", f'-backend-config=bucket={tf_bucket}', f'-backend-config=region={s3_region}'], "Problem initializing Terraform.")
     os.chdir("..")
     print(separator)
 
     print("Running Terraform...")
-    os.chdir("./terraform")
+    os.chdir(terraform_dir)
     # Run terraform apply --auto-aprove
     terraform_output = execute(["terraform", "apply", "--auto-approve"], "Something went wrong with 'terraform apply'")
     # # Get IP address(es) of instance(s)
@@ -105,7 +109,7 @@ def create_instances():
     print(separator)
 
     print(f"Running Ansible to ensure the new EC2 instance{s} {are} correctly tagged...")
-    os.chdir("./ansible")
+    os.chdir(ansible_dir)
     # prepare the variables
     project_name = terraform_config["project_name"]
     env_prefix = terraform_config["env_prefix"]
@@ -121,12 +125,18 @@ def create_instances():
     print(separator)
 
     # Run instance configuration playbooks
+    os.chdir(post_creation_dir)
     if len(config_playbooks) > 0:
-        os.chdir("./ansible")
+        print(f"Generating dynamic ec2 inventory file...")
+        # DO IT 
+        inventory_file_contents = get_dynamic_inventory_str(inventory_template, project_name, env_prefix, region)
+        with open(inventory_filename, 'w') as f:
+            f.write(inventory_file_contents)
+        # generate_dynamic_inventory_file(inventory_template_file, project_name, env_prefix, region)
         print(f"Running Ansible playbooks to configure the new instance{s}...")
         for pb in config_playbooks:
             error_msg = summary_string(tf_bucket, public_ip_addresses) + f"ERROR: Something went wrong executing {pb}. Server configuration may not have completed."
-            execute(["ansible-playbook", pb, "-i", "inventory_aws_ec2.yaml"], error_msg)
+            execute(["ansible-playbook", pb, ""], error_msg)
     # If something goes wrong in this step, report error and IP addresses, then exit
     os.chdir("..")
     print(separator)
@@ -157,7 +167,7 @@ def destroy_instances():
 
     # Run terraform destroy to take down project infrastructure
     print("Running Terraform destroy...")
-    os.chdir("./terraform")
+    os.chdir(terraform_dir)
     # Run terraform destroy
     execute(["terraform", "destroy", "--auto-approve"], "Problem during terraform destroy.")
     os.chdir("..")
@@ -165,7 +175,7 @@ def destroy_instances():
 
     # Use Ansible to delete the terraform remote state bucket in S3
     print("Using Ansible to delete the S3 bucket for Terraform's remote state...")
-    os.chdir("./ansible")
+    os.chdir(ansible_dir)
     tf_bucket = get_terraform_bucket_name(terraform_config['project_name'])
     error_msg = f"Something went wrong deleting the S3 bucket {tf_bucket}"
     execute(["ansible-playbook", "delete-s3-bucket.yaml", '--extra-vars', f'bucket_name={tf_bucket}'], error_msg)
@@ -174,7 +184,7 @@ def destroy_instances():
 
     # Delete the local terraform backend files
     print("Cleaning up local Terraform directory...")
-    os.chdir("./terraform")
+    os.chdir(terraform_dir)
     # Delete .terraform folder, terraform.tfstate, terraform.tfstate.backup, and lock file - if present
     existing_files = execute(["ls", "-la"], print_to_terminal=False)
     files_to_delete = [".terraform", ".terraform.tfstate", ".terraform.tfstate.backup", ".terraform.lock.hcl"]
@@ -183,6 +193,14 @@ def destroy_instances():
             print(f"removing {filename}")
             execute(["rm", "-rf", filename])
     os.chdir("..")
+    print(separator)
+
+    # Delete the dynamic inventory file
+    print("Cleaning up inventory file in post-creation directory...")
+    os.chdir(post_creation_dir)
+    print(f"removing {inventory_filename}")
+    execute(["rm", inventory_filename])
+    os.chdir('..')
     print(separator)
 
     print("Done.")
@@ -217,6 +235,8 @@ def check_prerequisites():
     print(subheading("Infrastructure configuration"))
     confirm("Did you check terraform/terraform.tfvars to make sure it reflects your project and access credentials?")
     print(separator)
+
+
 
 ########################## 
 #    HELPER FUNCTIONS    #
@@ -322,6 +342,15 @@ def ip_address_summary_string(ip_list):
     s += "SSH access: ssh ec2-user@<ip_address>"
     return s
 
+def get_dynamic_inventory_str(inventory_template_file, project, env, region):
+    with open(inventory_template_file, 'r') as f:
+        print(f"Found {inventory_template_file}")
+        template_str = f.read()
+    macros = {"ENV": env, "PROJECT": project, "REGION": region}
+    for macro in macros:
+        template_str = template_str.replace(macro, macros[macro])
+    return template_str
+
 if __name__=="__main__":
     usage = "\nUsage:\n\tpython ec2_instances.py create\n\tpython ec2_instances.py destroy\n"
     if len(sys.argv) != 2:
@@ -334,3 +363,4 @@ if __name__=="__main__":
     else:
         print(usage)
         sys.exit()
+    
