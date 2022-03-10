@@ -49,7 +49,7 @@ def create_instances():
         with open(instance_config_file) as f:
             print(f"Found {instance_config_file}")
             config_playbooks = f.readlines()
-        config_playbooks = [p.strip() for p in config_playbooks]
+        config_playbooks = [get_filename_and_vars(pb_info) for pb_info in config_playbooks]
     except FileNotFoundError:
         print(f"Could not find {instance_config_file}.")
     num_config_playbooks = len(config_playbooks)
@@ -57,7 +57,7 @@ def create_instances():
     if num_config_playbooks == 0:
         confirm(f"\nAre you sure you don't want to use Ansible to automatically install or run anything on the server{s} after {they} {are} created?")
     else:
-        playbook_list = "\n".join(["   " + p.strip() for p in config_playbooks])
+        playbook_list = "\n".join(["   " + p[0].strip() for p in config_playbooks])
         confirm(f"\nAfter the instance{s} {are} created, these Ansible playbooks will be run in this order:\n\n{playbook_list}")
     os.chdir('..')
     print(separator)
@@ -128,15 +128,14 @@ def create_instances():
     os.chdir(post_creation_dir)
     if len(config_playbooks) > 0:
         print(f"Generating dynamic ec2 inventory file...")
-        # DO IT 
         inventory_file_contents = get_dynamic_inventory_str(inventory_template, project_name, env_prefix, region)
         with open(inventory_filename, 'w') as f:
             f.write(inventory_file_contents)
         # generate_dynamic_inventory_file(inventory_template_file, project_name, env_prefix, region)
         print(f"Running Ansible playbooks to configure the new instance{s}...")
-        for pb in config_playbooks:
+        for (pb, pb_vars) in config_playbooks:
             error_msg = summary_string(tf_bucket, public_ip_addresses) + f"ERROR: Something went wrong executing {pb}. Server configuration may not have completed."
-            execute(["ansible-playbook", pb, ""], error_msg)
+            execute(["ansible-playbook", pb, "--extra-vars", pb_vars], error_msg)
     # If something goes wrong in this step, report error and IP addresses, then exit
     os.chdir("..")
     print(separator)
@@ -351,16 +350,41 @@ def get_dynamic_inventory_str(inventory_template_file, project, env, region):
         template_str = template_str.replace(macro, macros[macro])
     return template_str
 
-if __name__=="__main__":
-    usage = "\nUsage:\n\tpython ec2_instances.py create\n\tpython ec2_instances.py destroy\n"
-    if len(sys.argv) != 2:
-        print(usage)
-        sys.exit()
-    if sys.argv[1] == "create":
-        create_instances()
-    elif sys.argv[1] == "destroy":
-        destroy_instances()
+# takes in a string, one line from the instance_config_file
+# SHOULD be a playbook filename, with optional extra-vars. 
+# E.g.:
+# paybookname.yaml
+# or
+# playbookname.yaml var1=val var2=val
+# etc.
+def get_filename_and_vars(pb_info):
+    pb_info = pb_info.strip()
+    playbook_info_regex = '(^(.+.yaml)(\s+[a-zA-Z]+[a-zA-Z\d_]*=[\S]+.*)*$)'
+    valid_playbook_info = re.compile(playbook_info_regex)
+    matches = re.search(valid_playbook_info, pb_info)
+    if matches:
+        pb_filename = matches.group(2)
+        extra_vars = matches.group(3).strip()
     else:
-        print(usage)
-        sys.exit()
+        raise PostCreationFileFormatError(f"\nProblem parsing the format of {instance_config_file} on the following line:\n\n\t{pb_info}\n")
+    return (pb_filename, extra_vars)
+
+
+class PostCreationFileFormatError(Exception):
+    pass
+
+if __name__=="__main__":
+    # usage = "\nUsage:\n\tpython ec2_instances.py create\n\tpython ec2_instances.py destroy\n"
+    # if len(sys.argv) != 2:
+    #     print(usage)
+    #     sys.exit()
+    # if sys.argv[1] == "create":
+    #     create_instances()
+    # elif sys.argv[1] == "destroy":
+    #     destroy_instances()
+    # else:
+    #     print(usage)
+    #     sys.exit()
+    print(get_filename_and_vars("playbook.yaml a=1234bb b=a\n"))
+
     
