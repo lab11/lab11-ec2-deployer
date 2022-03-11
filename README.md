@@ -11,9 +11,9 @@ Once you have your own version to modify, these are the steps for running the pr
 * Configure the Terraform project to reflect your specific needs
 * Run `ec2_deployer.py apply` to create the instance(s)
 
-If you want to modify your existing deployment, simply change the Terraform config files (see "Configure the Project" below) to reflect the new desired state and run `ec2_deployer.py apply` again.
+If you want to modify your existing deployment, simply change the Terraform config files to reflect the new desired state (see "Configure the Project" below) and run `ec2_deployer.py apply` again. If Terraform can modify an existing resource instead of creating a new one, it will do so. However, if you are changing the project name or environment, please refer to the "important notes" below.
 
-When you're completely done with your project and want to delete the instance(s) and supporting AWS infrastructure, run `ec2_deployer.py destroy` to tear it down. You can easily recreate it with another `python ec2_deployer.py apply` command.
+When you are completely done with your project and want to delete the instance(s) and supporting AWS infrastructure, run `ec2_deployer.py destroy` to tear it down. You can easily recreate it with another `python ec2_deployer.py apply` command.
 
 # 0. Installation Requirements
 
@@ -158,6 +158,6 @@ This works thanks to a dynamic inventory file called `post-creation/inventory_aw
 
 # 4. Run the Script
 
-Run `python ec2_deployer.py apply` to create the AWS resources. If you forget the IP addresses, running `python ec2_deployer.py apply` will fetch the latest state of the infrastructure and list them for you again.
+Run `python ec2_deployer.py apply` to create the AWS resources. If you forget the IP addresses, you can run `terraform refresh` in the `terraform` directory to quickly fetch the current state.
 
-Once you have the public IP(s), you should be able to SSH into each instance with `ssh ec2-user@<ec2_public_ip>` to confirm that the instance is up. You can then move on to configuring the server.
+Once you have the public IP(s), you should be able to SSH into each instance with `ssh ec2-user@<ec2_public_ip>` to confirm that the instance is up.
