@@ -161,5 +161,3 @@ This works thanks to a dynamic inventory file called `post-creation/inventory_aw
 Run `python ec2_deployer.py apply` to create the AWS resources. If you forget the IP addresses, running `python ec2_deployer.py apply` will fetch the latest state of the infrastructure and list them for you again.
 
 Once you have the public IP(s), you should be able to SSH into each instance with `ssh ec2-user@<ec2_public_ip>` to confirm that the instance is up. You can then move on to configuring the server.
-
-Note: One limitation of spot instance requests is that the AWS API does not allow users to set tags/names for the instances through the requests. This means that while on-demand instances created with this Terraform project will have names in the EC2 dashboard and tags with contact information, spot instances will not. It is strongly encouraged that you manually add name and contact email tags to spot instances. On the dashboard, you can identify which spot instances are associated with your project by their security groups and key names. Those resources will also have contact information in the tags.
