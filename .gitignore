@@ -1,0 +1,2 @@
+.terraform*
+post-creation/inventory_aws_ec2.yaml
