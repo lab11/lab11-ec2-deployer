@@ -158,6 +158,6 @@ This works thanks to a dynamic inventory file called `post-creation/inventory_aw
 
 # 4. Run the Script
 
-Run `python ec2_deployer.py apply` to create the AWS resources. If you forget the IP addresses, you can run `terraform refresh` in the `terraform` directory to quickly fetch the current state.
+Run `python ec2_deployer.py apply` to create the AWS resources. If you forget the IP addresses, you can run `terraform refresh` in the `terraform` directory to quickly see them.
 
 Once you have the public IP(s), you should be able to SSH into each instance with `ssh ec2-user@<ec2_public_ip>` to confirm that the instance is up.
