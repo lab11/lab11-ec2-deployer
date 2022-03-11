@@ -1,5 +1,14 @@
+# Example: Adding Authorized Keys
 
-A Python3 script for automatically creating, configuring, and destroying EC2 instances using Terraform and Ansible.
+This example shows how to automatically add additional keys to the authorized_keys file on the remote instances after they are created.
+
+In the `post-creation` directory, you can see the following changes:
+
+* The new file `additional_authorized_keys` which contains some public keys to add to the instance(s)
+* The new Ansible playbook `add-authorized-keys.yaml` which makes sure the public keys in `additional_authorized_keys` are in the `authorized_keys` file on all instances
+* `fresh_installation_playbooks.txt` now contains the playbook `add-authorized-keys.yaml` so that it runs automatically after instance creation
+
+**To run:** Update `terraform/terraform.tfvars` with your SSH key and IP address, then run `python ec2-deployer.py apply`. After the server is created, SSH into it and confirm that the `authorized_keys` file contains the additional public keys specified in the repo's `additional_authorized_keys` file. (The additional public keys belong to some of Meghan's less-used computers.)  
 
 # How to use this project
 
