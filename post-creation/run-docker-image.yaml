@@ -1,0 +1,64 @@
+---
+- name: Wait for ssh connection
+  hosts: all
+  gather_facts: False
+  tasks:
+    - name: Ensure SSH port is open
+      wait_for:
+        port: 22
+        delay: 10
+        timeout: 120
+        host:  '{{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}'
+      vars:
+        ansible_connection: local
+
+- name: Install yum packages
+  hosts: all
+  become: yes
+  tasks:
+  - name: Make sure python3 and docker are installed
+    vars:
+      ansible_python_interpreter: /usr/bin/python
+    yum:
+      name: 
+        - python3
+        - docker
+      state: latest
+      update_cache: yes
+  - name: Install python for docker
+    pip:
+      name: docker
+
+- name: Ensure ec2-user is in docker group
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure ec2-user is part of docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+    - name: Reconnect to server session
+      meta: reset_connection
+
+- name: Ensure Docker service is running
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure Docker is running
+      systemd:
+        name: docker
+        state: started
+
+# Note: You may need to modify the firewall rules in main.tf 
+# to make sure the port is open on the instance(s)
+- name: Run Docker image
+  hosts: all
+  tasks:
+    - name: Pull and run the latest image
+      community.docker.docker_container:
+        name: '{{container_name}}'
+        image: '{{image_name}}'
+        published_ports:
+          - '{{port_binding}}'
+        pull: yes

@@ -1,0 +1,1 @@
+run-docker-image.yaml container_name=my-project-broker image_name=eclipse-mosquitto port_binding=1883:1883
