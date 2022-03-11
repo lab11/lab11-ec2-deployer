@@ -390,12 +390,8 @@ def get_private_key_file(public_key_file):
         # get the public key directory from the full public key file path
         public_key_dir = public_key_file[:public_key_file.rfind('/')+1]
         private_key_prefix = public_key_file[public_key_file.rfind('/')+1:].replace(".pub", "")
-        print(public_key_dir)
-        print(private_key_prefix)
         # get all files in the public key directory    
         nearby_files = os.listdir(public_key_dir)
-        print(nearby_files)
-        print(len(nearby_files))
         candidate = ""
         num_candidates_found = 0
         for nf in nearby_files:
