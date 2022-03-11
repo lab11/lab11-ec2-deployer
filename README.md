@@ -120,7 +120,7 @@ Another thing you will likely want to configure for your project is the firewall
 
 After the servers are created, you will likely want to install and run things on them. Ansible is a great way to perform these fresh installation tasks automatically. With Ansible, you can install packages and libraries, start services, run Docker images, clone Git repos, transfer files, run programs, and so much more. Teaching Ansible is outside the scope of this README, but consider learning it if you're not already familiar with it. It can be the final step in truly automatic deployment of your application.
 
-The `ec2_instances.py` script will look for a file called `fresh_installation_playbooks.txt` in the  `post-creation` folder. This file should contain a list of Ansible playbooks and their variables that should be run after the servers are created. The playbooks themselves should also be located in the `post-creation` folder. The script will tell you in advance what playbooks it has found (if any), and what it plans to run.
+The `ec2_instances.py` script will look for a file called `fresh_installation_playbooks.txt` in the  `post-creation` folder. This file should contain a list of Ansible playbooks and their variables that should be run after the servers are created. The playbooks themselves should also be located in the `post-creation` folder. The script will tell you in advance what playbooks it has found (if any), and what it plans to run. There are a couple of example playbooks in there to help you get started (`run-docker-image.yaml` and `clone-git-repo.yaml`).
 
 To skip this step, simply leave the `fresh_installation_playbooks.txt` file blank or delete it.
 
