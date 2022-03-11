@@ -119,7 +119,7 @@ def create_instances():
     # Run ansible-playbook tag_ec2_instances.yaml --extra-vars "project_name={project_name} contact_email={contact_email}" etc.
     ansible_vars = f"project_name={project_name} contact_email={contact_email} env={env_prefix} region={region} IAM_user={IAM_user}"
     # Run command. If something goes wrong in this step, report error and IP addresses, then exit
-    error_msg = summary_string(tf_bucket, public_ip_addresses) + "\ERROR: Something went wrong while tagging instances."
+    error_msg = summary_string(tf_bucket, public_ip_addresses) + "\n\nERROR: Something went wrong while tagging instances."
     ansible_output = execute(["ansible-playbook", "tag-ec2-instances.yaml", '--extra-vars', ansible_vars], error_msg)
     os.chdir("..")
     print(separator)
@@ -134,7 +134,7 @@ def create_instances():
         # generate_dynamic_inventory_file(inventory_template_file, project_name, env_prefix, region)
         print(f"Running Ansible playbooks to configure the new instance{s}...")
         for (pb, pb_vars) in config_playbooks:
-            error_msg = summary_string(tf_bucket, public_ip_addresses) + f"ERROR: Something went wrong executing {pb}. Server configuration may not have completed."
+            error_msg = summary_string(tf_bucket, public_ip_addresses) + f"\n\nERROR: Something went wrong executing {pb}. Server configuration may not have completed."
             execute(["ansible-playbook", pb, "--extra-vars", pb_vars], error_msg)
     # If something goes wrong in this step, report error and IP addresses, then exit
     os.chdir("..")
@@ -319,7 +319,7 @@ def execute(cmd, err_msg="", print_to_terminal=True):
                 print(line, end='')
             cmd_output += line
     if p.returncode != 0:
-        print(err_msg)
+        print("\n" + err_msg)
         sys.exit()    
     return cmd_output
 
@@ -374,17 +374,15 @@ class PostCreationFileFormatError(Exception):
     pass
 
 if __name__=="__main__":
-    # usage = "\nUsage:\n\tpython ec2_instances.py create\n\tpython ec2_instances.py destroy\n"
-    # if len(sys.argv) != 2:
-    #     print(usage)
-    #     sys.exit()
-    # if sys.argv[1] == "create":
-    #     create_instances()
-    # elif sys.argv[1] == "destroy":
-    #     destroy_instances()
-    # else:
-    #     print(usage)
-    #     sys.exit()
-    print(get_filename_and_vars("playbook.yaml a=1234bb b=a\n"))
-
+    usage = "\nUsage:\n\tpython ec2_instances.py create\n\tpython ec2_instances.py destroy\n"
+    if len(sys.argv) != 2:
+        print(usage)
+        sys.exit()
+    if sys.argv[1] == "create":
+        create_instances()
+    elif sys.argv[1] == "destroy":
+        destroy_instances()
+    else:
+        print(usage)
+        sys.exit()
     
