@@ -383,7 +383,7 @@ class PostCreationFileFormatError(Exception):
     pass
 
 if __name__=="__main__":
-    usage = "\nUsage:\n\tpython ec2_instances.py apply\n\tpython ec2_instances.py destroy\n"
+    usage = "\nUsage:\n\tpython ec2_deployer.py apply\n\tpython ec2_deployer.py destroy\n"
     if len(sys.argv) != 2:
         print(usage)
         sys.exit()

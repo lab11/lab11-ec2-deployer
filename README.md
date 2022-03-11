@@ -3,15 +3,17 @@ A Python3 script for automatically creating, configuring, and destroying EC2 ins
 
 # How to use this project
 
-* Create a new branch for your project
+* Create a new branch for your project named `project/<project_name>`
 
 Once you have your own version to modify, these are the steps for running the project:
 
 * Authenticate to AWS on the command line
 * Configure the Terraform project to reflect your specific needs
-* Run `ec2_instances.py apply` to create the instance(s)
+* Run `ec2_deployer.py apply` to create the instance(s)
 
-When you're completely done with your project and want to delete the instance(s) and supporting AWS infrastructure, run `ec2_instances.py destroy` to tear it down. You can easily recreate it with another `python ec2_instances.py apply` command.
+If you want to modify your existing deployment, simply change the Terraform config files (see "Configure the Project" below) to reflect the new desired state and run `ec2_deployer.py apply` again.
+
+When you're completely done with your project and want to delete the instance(s) and supporting AWS infrastructure, run `ec2_deployer.py destroy` to tear it down. You can easily recreate it with another `python ec2_deployer.py apply` command.
 
 # 0. Installation Requirements
 
@@ -20,7 +22,7 @@ You will need to install:
 - Terraform 
 - Ansible
 
-If you forget any prerequisites, the `ec2_instances.py` script will let you know.
+If you forget any prerequisites, the `ec2_deployer.py` script will let you know.
 
 # 1. Authenticate to AWS
 
@@ -76,9 +78,9 @@ You should change these variables to reflect your own project and SSH access inf
 
 IMPORTANT NOTE #1: For people working on a team, there is an important concept to understand. The current state of the infrastructure, managed by Terraform, is stored in an S3 bucket. This allows team members to synchronize their Terraform projects. **The project name and environment determine where Terraform looks for the infrastructure state.** The script checks for an S3 bucket named "lab11-<env_prefix>-<project_name>-terraform", creates it if necessary, and tells Terraform to use that bucket for its remote state. If multiple team members want to be able to modify the infrastructure, they must have the same `project_name` and `env_prefix` set in `terraform.tfvars` to synchronize their state. 
 
-IMPORTANT NOTE #2: Related to the above, you should treat `project_name` and `env_prefix` as immutable. If you have already created infrastructure, be careful when changing the project name or environment. Changing the project name or the environment will not change the AWS tags in the existing deployment - instead, it will create an entirely new deployment, while leaving the old one running. This is because the script will create a new S3 bucket with a new name based on the project and environment and initialize Terraform with the fresh new remote state. If you want to modify the project name or environment associated with your resources instead of creating multiple deployments, make sure you destroy the existing infrastructure first with `python ec2_instances.py destroy`. If you forget, just change the project name and environment back to the original in `terraform.tfvars` and then run the destroy command. This would be a great thing to fix in the script someday (Terraform itself is certainly capable of modifying the Name and Env tags without tearing everything down, so long as you don't change the remote state location).
+IMPORTANT NOTE #2: Related to the above, you should treat `project_name` and `env_prefix` as immutable. If you have already created infrastructure, be careful when changing the project name or environment. Changing the project name or the environment will not change the AWS tags in the existing deployment - instead, it will create an entirely new deployment, while leaving the old one running. This is because the script will create a new S3 bucket with a new name based on the project and environment and initialize Terraform with the fresh new remote state. If you want to modify the project name or environment associated with your resources instead of creating multiple deployments, make sure you destroy the existing infrastructure first with `python ec2_deployer.py destroy`. If you forget, just change the project name and environment back to the original in `terraform.tfvars` and then run the destroy command. This would be a great thing to fix in the script someday (Terraform itself is certainly capable of modifying the Name and Env tags without tearing everything down, so long as you don't change the remote state location).
 
-IMPORTANT NOTE #3: If you are working with a team, note that there is only one set of approved IPs and one SSH key, which could cause some issues. Some options to deal with this: 1) Each team member runs `python ec2_instances.py apply` to change the approved IPs/SSH key to their own before accessing the server (not great); 2) the approved IPs list contains the IP addresses of the whole team, and the first Terraform user uses Ansible to add more SSH keys in the .authorized_keys file on the server afterwards; or 3) the approved IPs list contains IP addresses of the whole team, and the team creates a new SSH key-pair for accessing this server and (securely) shares it among themselves.
+IMPORTANT NOTE #3: If you are working with a team, note that there is only one set of approved IPs and one SSH key, which could cause some issues. Some options to deal with this: 1) Each team member runs `python ec2_deployer.py apply` to change the approved IPs/SSH key to their own before accessing the server (not great); 2) the approved IPs list contains the IP addresses of the whole team, and the first Terraform user uses Ansible to add more SSH keys in the .authorized_keys file on the server afterwards; or 3) the approved IPs list contains IP addresses of the whole team, and the team creates a new SSH key-pair for accessing this server and (securely) shares it among themselves.
 
 ## Additional variables
 
@@ -120,7 +122,7 @@ Another thing you will likely want to configure for your project is the firewall
 
 After the servers are created, you will likely want to install and run things on them. Ansible is a great way to perform these fresh installation tasks automatically. With Ansible, you can install packages and libraries, start services, run Docker images, clone Git repos, transfer files, run programs, and so much more. Teaching Ansible is outside the scope of this README, but consider learning it if you're not already familiar with it. It can be the final step in truly automatic deployment of your application.
 
-The `ec2_instances.py` script will look for a file called `fresh_installation_playbooks.txt` in the  `post-creation` folder. This file should contain a list of Ansible playbooks and their variables that should be run after the servers are created. The playbooks themselves should also be located in the `post-creation` folder. The script will tell you in advance what playbooks it has found (if any), and what it plans to run. There are a couple of example playbooks in there to help you get started (`run-docker-image.yaml` and `clone-git-repo.yaml`).
+The `ec2_deployer.py` script will look for a file called `fresh_installation_playbooks.txt` in the  `post-creation` folder. This file should contain a list of Ansible playbooks and their variables that should be run after the servers are created. The playbooks themselves should also be located in the `post-creation` folder. The script will tell you in advance what playbooks it has found (if any), and what it plans to run. There are a couple of example playbooks in there to help you get started (`run-docker-image.yaml` and `clone-git-repo.yaml`).
 
 To skip this step, simply leave the `fresh_installation_playbooks.txt` file blank or delete it.
 
@@ -156,7 +158,7 @@ This works thanks to a dynamic inventory file called `post-creation/inventory_aw
 
 # 4. Run the Script
 
-Run `python ec2_instances.py apply` to create the AWS resources. If you forget the IP addresses, running `python ec2_instances.py apply` will fetch the latest state of the infrastructure and list them for you again.
+Run `python ec2_deployer.py apply` to create the AWS resources. If you forget the IP addresses, running `python ec2_deployer.py apply` will fetch the latest state of the infrastructure and list them for you again.
 
 Once you have the public IP(s), you should be able to SSH into each instance with `ssh ec2-user@<ec2_public_ip>` to confirm that the instance is up. You can then move on to configuring the server.
 
