@@ -1,5 +1,5 @@
 
-A Python3 tool for creating, configuring, and destroying EC2 instances using Terraform and Ansible.
+A Python3 script for automatically creating, configuring, and destroying EC2 instances using Terraform and Ansible.
 
 # How to use this project
 
