@@ -121,7 +121,7 @@ def create_instances():
     # Run ansible-playbook tag_ec2_instances.yaml --extra-vars "project_name={project_name} contact_email={contact_email}" etc.
     ansible_vars = f"project_name={project_name} contact_email={contact_email} env={env_prefix} region={region} IAM_user={IAM_user}"
     # Run command. If something goes wrong in this step, report error and IP addresses, then exit
-    error_msg = summary_string(tf_bucket, public_ip_addresses) + "\n\nERROR: Something went wrong while tagging instances."
+    error_msg = summary_string(tf_bucket, public_ip_addresses, s, are) + "\n\nERROR: Something went wrong while tagging instances."
     ansible_output = execute(["ansible-playbook", "tag-ec2-instances.yaml", '--extra-vars', ansible_vars], error_msg)
     os.chdir("..")
     print(separator)
@@ -132,6 +132,7 @@ def create_instances():
     inventory_file_contents = get_dynamic_inventory_str(inventory_template, project_name, env_prefix, region)
     with open(inventory_filename, 'w') as f:
         f.write(inventory_file_contents)
+        print(f"Generated inventory file {inventory_filename}")
     os.chdir("..")
     print(separator)
 
@@ -141,7 +142,7 @@ def create_instances():
         print(f"Running Ansible playbooks to configure the new instance{s}...")
         ssh_private_key_file = get_private_key_file(terraform_config["ssh_public_key_file"])
         for (pb, pb_vars) in config_playbooks:
-            error_msg = summary_string(tf_bucket, public_ip_addresses) + f"\n\nERROR: Something went wrong executing {pb}. Server configuration may not have completed."
+            error_msg = summary_string(tf_bucket, public_ip_addresses, s, are) + f"\n\nERROR: Something went wrong executing {pb}. Server configuration may not have completed."
             if len(pb_vars) == 0:
                 execute(["ansible-playbook", pb, '--private-key', ssh_private_key_file], error_msg)
             else:
@@ -334,23 +335,22 @@ def execute(cmd, err_msg="", print_to_terminal=True):
     return cmd_output
 
 def summary_string(bucket_name, ip_list, s, are):
-    s = heading("Summary", margin="          ")
-    s += "\n\n"
-    s += terraform_state_summary_string(bucket_name)
-    s += "\n\n"
-    s += ip_address_summary_string(ip_list, s, are)
-    return s
+    ss = heading("Summary", margin="          ")
+    ss += "\n\n"
+    ss += terraform_state_summary_string(bucket_name)
+    ss += "\n\n"
+    ss += ip_address_summary_string(ip_list, s, are)
+    return ss
 
 def terraform_state_summary_string(bucket_name):
     return f"Terraform remote state for this project is stored in the following S3 bucket:\n{bucket_name}"
 
-def ip_address_summary_string(ip_list, a, are):
-    s = f"Your instance{s} {are} available at:\n"
-    s += "\n".join(ip_list)
-    s += "\n\n"
-    s += "SSH access: ssh ec2-user@<ip_address>"
-    s += "If the key is not your default SSH key: ssh ec2-user@<ip_address> -i <private_key_path>"
-    return s
+def ip_address_summary_string(ip_list, s, are):
+    ss = f"Your instance{s} {are} available at:\n"
+    ss += "\n".join(ip_list)
+    ss += "\n\n"
+    ss += "SSH access:\nssh ec2-user@<ip_address> [-i <private_key_path>]"
+    return ss
 
 def get_dynamic_inventory_str(inventory_template_file, project, env, region):
     with open(inventory_template_file, 'r') as f:
