@@ -135,7 +135,10 @@ def create_instances():
         print(f"Running Ansible playbooks to configure the new instance{s}...")
         for (pb, pb_vars) in config_playbooks:
             error_msg = summary_string(tf_bucket, public_ip_addresses) + f"\n\nERROR: Something went wrong executing {pb}. Server configuration may not have completed."
-            execute(["ansible-playbook", pb, "--extra-vars", pb_vars], error_msg)
+            if len(pb_vars) == 0:
+                execute(["ansible-playbook", pb], error_msg)
+            else:
+                execute(["ansible-playbook", pb, "--extra-vars", pb_vars], error_msg)
     # If something goes wrong in this step, report error and IP addresses, then exit
     os.chdir("..")
     print(separator)
@@ -359,12 +362,14 @@ def get_dynamic_inventory_str(inventory_template_file, project, env, region):
 # etc.
 def get_filename_and_vars(pb_info):
     pb_info = pb_info.strip()
-    playbook_info_regex = '(^(.+.yaml)(\s+[a-zA-Z]+[a-zA-Z\d_]*=[\S]+.*)*$)'
+    playbook_info_regex = '(^(.+.ya?ml)(\s+[a-zA-Z]+[a-zA-Z\d_]*=[\S]+.*)*$)'
     valid_playbook_info = re.compile(playbook_info_regex)
     matches = re.search(valid_playbook_info, pb_info)
     if matches:
         pb_filename = matches.group(2)
-        extra_vars = matches.group(3).strip()
+        extra_vars = ''
+        if matches.group(3) is not None:
+            extra_vars = matches.group(3).strip()
     else:
         raise PostCreationFileFormatError(f"\nProblem parsing the format of {instance_config_file} on the following line:\n\n\t{pb_info}\n")
     return (pb_filename, extra_vars)
@@ -385,4 +390,3 @@ if __name__=="__main__":
     else:
         print(usage)
         sys.exit()
-    
