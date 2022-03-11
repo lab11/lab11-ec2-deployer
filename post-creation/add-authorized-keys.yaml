@@ -1,0 +1,19 @@
+---
+- name: Copy authorized keys
+  hosts: all
+  gather_facts: False
+  tasks:
+    - name: Ensure SSH port is open
+      wait_for:
+        port: 22
+        delay: 10
+        timeout: 120
+        host:  '{{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}'
+      vars:
+        ansible_connection: local
+
+    - name: Make sure contents of authorized_keys file in repo are also in remote
+      blockinfile:
+        path: /home/ec2-user/.ssh/authorized_keys
+        block: "{{ lookup('file', './additional_authorized_keys') }}"
+        backup: yes
