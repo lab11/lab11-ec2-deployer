@@ -6,6 +6,8 @@ import os
 import importlib.util
 import re
 
+from rsa import PrivateKey
+
 separator = "\n"
 indent = "  "
 ansible_dir = "./ansible"
@@ -137,18 +139,19 @@ def create_instances():
     os.chdir(post_creation_dir)
     if len(config_playbooks) > 0:
         print(f"Running Ansible playbooks to configure the new instance{s}...")
+        ssh_private_key_file = get_private_key_file(terraform_config["ssh_public_key_file"])
         for (pb, pb_vars) in config_playbooks:
             error_msg = summary_string(tf_bucket, public_ip_addresses) + f"\n\nERROR: Something went wrong executing {pb}. Server configuration may not have completed."
             if len(pb_vars) == 0:
-                execute(["ansible-playbook", pb], error_msg)
+                execute(["ansible-playbook", pb, '--private-key', ssh_private_key_file], error_msg)
             else:
-                execute(["ansible-playbook", pb, "--extra-vars", pb_vars], error_msg)
+                execute(["ansible-playbook", pb, '--private-key', ssh_private_key_file, "--extra-vars", pb_vars], error_msg)
     # If something goes wrong in this step, report error and IP addresses, then exit
     os.chdir("..")
     print(separator)
 
     # Report IP addresses
-    print(summary_string(tf_bucket, public_ip_addresses))
+    print(summary_string(tf_bucket, public_ip_addresses, s, are))
 
 
 
@@ -330,22 +333,23 @@ def execute(cmd, err_msg="", print_to_terminal=True):
         sys.exit()    
     return cmd_output
 
-def summary_string(bucket_name, ip_list):
+def summary_string(bucket_name, ip_list, s, are):
     s = heading("Summary", margin="          ")
     s += "\n\n"
     s += terraform_state_summary_string(bucket_name)
     s += "\n\n"
-    s += ip_address_summary_string(ip_list)
+    s += ip_address_summary_string(ip_list, s, are)
     return s
 
 def terraform_state_summary_string(bucket_name):
     return f"Terraform remote state for this project is stored in the following S3 bucket:\n{bucket_name}"
 
-def ip_address_summary_string(ip_list):
-    s = "Your instances are available at:\n"
+def ip_address_summary_string(ip_list, a, are):
+    s = f"Your instance{s} {are} available at:\n"
     s += "\n".join(ip_list)
     s += "\n\n"
     s += "SSH access: ssh ec2-user@<ip_address>"
+    s += "If the key is not your default SSH key: ssh ec2-user@<ip_address> -i <private_key_path>"
     return s
 
 def get_dynamic_inventory_str(inventory_template_file, project, env, region):
@@ -378,6 +382,36 @@ def get_filename_and_vars(pb_info):
         raise PostCreationFileFormatError(f"\nProblem parsing the format of {instance_config_file} on the following line:\n\n\t{pb_info}\n")
     return (pb_filename, extra_vars)
 
+def get_private_key_file(public_key_file):
+    error_msg = "\nERROR: Could not guess the SSH private key filename from the public key filename in terraform.tfvars." \
+                + "\nCannot run Ansible on the remote servers."
+    private_key_file = ""
+    if public_key_file[-4:] == ".pub":
+        # get the public key directory from the full public key file path
+        public_key_dir = public_key_file[:public_key_file.rfind('/')+1]
+        private_key_prefix = public_key_file[public_key_file.rfind('/')+1:].replace(".pub", "")
+        print(public_key_dir)
+        print(private_key_prefix)
+        # get all files in the public key directory    
+        nearby_files = os.listdir(public_key_dir)
+        print(nearby_files)
+        print(len(nearby_files))
+        candidate = ""
+        num_candidates_found = 0
+        for nf in nearby_files:
+            if private_key_prefix in nf and ".pub" not in nf:
+                candidate = nf
+                num_candidates_found += 1
+        if num_candidates_found == 1:
+            private_key_file = public_key_dir + candidate
+        else:
+            raise PrivateKeyDetectionError(error_msg)
+    else:
+        raise PrivateKeyDetectionError(error_msg)
+    return private_key_file
+
+class PrivateKeyDetectionError(Exception):
+    pass
 
 class PostCreationFileFormatError(Exception):
     pass
