@@ -30,16 +30,6 @@
     pip:
       name: docker
 
-# - name: Install Docker Compose
-#   hosts: scarlett_server
-#   become: yes
-#   tasks:
-#     - name: Make sure Docker Compose is installed
-#       get_url:
-#         url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-{{lookup('pipe', 'uname -m')}}"
-#         dest: /usr/local/bin/docker-compose
-#         mode: +x
-
 - name: Add ec2-user to docker group
   hosts: all
   become: yes
@@ -61,14 +51,15 @@
         name: docker
         state: started
 
-# Note: You will need to modify the firewall rules in main.tf to make sure port 80 is open
+# Note: You may need to modify the firewall rules in main.tf 
+# to make sure the port is open on the instance(s)
 - name: Run Docker image
   hosts: all
   tasks:
     - name: Pull and run the latest image
       community.docker.docker_container:
-        name: nginx #'{{container_name}}' #scarlett
-        image: nginx #'{{image_name}}' #public.ecr.aws/w2e6b5j5/scarlett-slack:latest
+        name: '{{container_name}}'
+        image: '{{image_name}}'
         published_ports:
-          - 80:80
+          - '{{port_binding}}'
         pull: yes
