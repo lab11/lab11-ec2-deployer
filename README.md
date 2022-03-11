@@ -9,9 +9,9 @@ Once you have your own version to modify, these are the steps for running the pr
 
 * Authenticate to AWS on the command line
 * Configure the Terraform project to reflect your specific needs
-* Run `ec2_instances.py create` to create the instance(s)
+* Run `ec2_instances.py apply` to create the instance(s)
 
-When you're completely done with your project and want to delete the instance(s) and supporting AWS infrastructure, run `ec2_instances.py destroy` to tear it down. You can easily recreate it with another `python ec2_instances.py create` command.
+When you're completely done with your project and want to delete the instance(s) and supporting AWS infrastructure, run `ec2_instances.py destroy` to tear it down. You can easily recreate it with another `python ec2_instances.py apply` command.
 
 # 0. Installation Requirements
 
@@ -24,7 +24,7 @@ If you forget any prerequisites, the `ec2_instances.py` script will let you know
 
 # 1. Authenticate to AWS
 
-Terraform and Ansible need AWS credentials in order to create AWS resources. This means you will need to 1) make sure you have an AWS user on the IAM service, 2) obtain your credentials, and 3) make the credentials available to Terraform and Ansible via environment variables.
+Terraform and Ansible need AWS credentials in order to create and modify AWS resources. This means you will need to 1) make sure you have an AWS user on the IAM service, 2) obtain your credentials, and 3) make the credentials available to Terraform and Ansible via environment variables.
 
 ## Find/create your AWS IAM user
 
@@ -49,7 +49,7 @@ The two "TF_VAR" variables are not required for Terraform to connect to AWS, but
 
 To make my AWS credentials available to Terraform and Ansible, I simply source the file, like so:
 
-`source ~/.aws/usr/meghan`
+`source ~/.aws/profiles/meghan`
 
 Note that this approach does mean storing your credentials in plain text on your computer, which could be dangerous, especially if your user has broad permissions. This solution had the best balance of security and complexity for me, but look up safer alternatives if you have concerns.
 
@@ -78,7 +78,7 @@ IMPORTANT NOTE #1: For people working on a team, there is an important concept t
 
 IMPORTANT NOTE #2: Related to the above, you should treat `project_name` and `env_prefix` as immutable. If you have already created infrastructure, be careful when changing the project name or environment. Changing the project name or the environment will not change the AWS tags in the existing deployment - instead, it will create an entirely new deployment, while leaving the old one running. This is because the script will create a new S3 bucket with a new name based on the project and environment and initialize Terraform with the fresh new remote state. If you want to modify the project name or environment associated with your resources instead of creating multiple deployments, make sure you destroy the existing infrastructure first with `python ec2_instances.py destroy`. If you forget, just change the project name and environment back to the original in `terraform.tfvars` and then run the destroy command. This would be a great thing to fix in the script someday (Terraform itself is certainly capable of modifying the Name and Env tags without tearing everything down, so long as you don't change the remote state location).
 
-IMPORTANT NOTE #3: If you are working with a team, note that there is only one set of approved IPs and one SSH key, which could cause some issues. Some options to deal with this: 1) Each team member runs `python ec2_instances.py create` to change the approved IPs/SSH key to their own before accessing the server (not great); 2) the approved IPs list contains the IP addresses of the whole team, and the first Terraform user uses Ansible to add more SSH keys in the .authorized_keys file on the server afterwards; or 3) the approved IPs list contains IP addresses of the whole team, and the team creates a new SSH key-pair for accessing this server and (securely) shares it among themselves.
+IMPORTANT NOTE #3: If you are working with a team, note that there is only one set of approved IPs and one SSH key, which could cause some issues. Some options to deal with this: 1) Each team member runs `python ec2_instances.py apply` to change the approved IPs/SSH key to their own before accessing the server (not great); 2) the approved IPs list contains the IP addresses of the whole team, and the first Terraform user uses Ansible to add more SSH keys in the .authorized_keys file on the server afterwards; or 3) the approved IPs list contains IP addresses of the whole team, and the team creates a new SSH key-pair for accessing this server and (securely) shares it among themselves.
 
 ## Additional variables
 
@@ -129,8 +129,8 @@ To skip this step, simply leave the `fresh_installation_playbooks.txt` file blan
 The format for `fresh_installation_playbooks.txt` is as follows. Each line specifies the name of a playbook located in the `post-creation` directory, followed by the variables you would pass to `--extra-vars`, if any. For example:
 
 ```
-build-docker-image-from-git-repo.yaml repo_name=https://github.com/lab11/scarlett-chatbot
-run-docker-image.yaml container_name=scarlett image_name=scarlett-slack:latest port_binding=3000:3000
+run-docker-image.yaml container_name=my-project-broker image_name=eclipse-mosquitto port_binding=1883:1883
+clone-git-repo.yaml repo_url="https://github.com/lab11/gateway-tools" dest_dir=/gateway
 ```
 
 The script will run these playbooks in order with the specified variables.
@@ -156,7 +156,7 @@ This works thanks to a dynamic inventory file called `post-creation/inventory_aw
 
 # 4. Run the Script
 
-Run `python ec2_instances.py create` to create the AWS resources. If you forget the IP addresses, running `python ec2_instances.py create` will fetch the latest state of the infrastructure and list them for you again.
+Run `python ec2_instances.py apply` to create the AWS resources. If you forget the IP addresses, running `python ec2_instances.py apply` will fetch the latest state of the infrastructure and list them for you again.
 
 Once you have the public IP(s), you should be able to SSH into each instance with `ssh ec2-user@<ec2_public_ip>` to confirm that the instance is up. You can then move on to configuring the server.
 
