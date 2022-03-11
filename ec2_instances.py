@@ -124,14 +124,18 @@ def create_instances():
     os.chdir("..")
     print(separator)
 
+    # Create dynamic inventory file
+    os.chdir(post_creation_dir)
+    print(f"Generating dynamic EC2 inventory file for Ansible...")
+    inventory_file_contents = get_dynamic_inventory_str(inventory_template, project_name, env_prefix, region)
+    with open(inventory_filename, 'w') as f:
+        f.write(inventory_file_contents)
+    os.chdir("..")
+    print(separator)
+
     # Run instance configuration playbooks
     os.chdir(post_creation_dir)
     if len(config_playbooks) > 0:
-        print(f"Generating dynamic ec2 inventory file...")
-        inventory_file_contents = get_dynamic_inventory_str(inventory_template, project_name, env_prefix, region)
-        with open(inventory_filename, 'w') as f:
-            f.write(inventory_file_contents)
-        # generate_dynamic_inventory_file(inventory_template_file, project_name, env_prefix, region)
         print(f"Running Ansible playbooks to configure the new instance{s}...")
         for (pb, pb_vars) in config_playbooks:
             error_msg = summary_string(tf_bucket, public_ip_addresses) + f"\n\nERROR: Something went wrong executing {pb}. Server configuration may not have completed."
