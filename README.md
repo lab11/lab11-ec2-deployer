@@ -1,5 +1,13 @@
 
-A Python3 script for automatically creating, configuring, and destroying EC2 instances using Terraform and Ansible.
+# Example: Run Docker Image
+
+In this example, we create an EC2 instance and then automatically run a Docker image containing the Mosquitto MQTT broker. These are the changes to look for:
+
+* In `post-creation`: A new Ansible playbook called `run-docker-image.yaml` that has provides some variables for the container, image, and port binding.
+* In `post-creation`: The file `fresh_installation_playbooks.txt` now contains `run-docker-image.yaml` and variable arguments for the Mosquitto Docker image which will automatically run after the instance is created.
+* In `terraform`: The file `main.tf` includes an additional firewall rule in the security group that opens the MQTT port (1883) to connections from any IP address.
+
+**To run:** Update `terraform/terraform.tfvars` with your SSH credentials and IP address. Run `python ec2_deployer.py apply`. After the script completes, SSH into the instance and confirm that the Mosquitto container is running with `docker container list`. Congratulations, you have just automatically deployed an MQTT broker on AWS. Run `python ec2_deployer.py destroy` when you are done.
 
 # How to use this project
 
