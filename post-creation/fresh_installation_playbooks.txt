@@ -1,2 +1,0 @@
-run-docker-image.yaml container_name=my-project-broker image_name=eclipse-mosquitto port_binding=1883:1883
-clone-git-repo.yaml repo_url="https://github.com/lab11/gateway-tools" dest_dir=/gateway
