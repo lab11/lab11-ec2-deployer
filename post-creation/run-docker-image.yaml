@@ -1,5 +1,4 @@
 ---
-
 - name: Wait for ssh connection
   hosts: all
   gather_facts: False
@@ -30,11 +29,11 @@
     pip:
       name: docker
 
-- name: Add ec2-user to docker group
+- name: Ensure ec2-user is in docker group
   hosts: all
   become: yes
   tasks:
-    - name: Add ec2-user to docker group
+    - name: Ensure ec2-user is part of docker group
       user:
         name: ec2-user
         groups: docker
@@ -42,7 +41,7 @@
     - name: Reconnect to server session
       meta: reset_connection
 
-- name: Run Docker service
+- name: Ensure Docker service is running
   hosts: all
   become: yes
   tasks:
