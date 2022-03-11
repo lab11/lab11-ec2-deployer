@@ -53,6 +53,14 @@ resource "aws_security_group" "my-project-sg" {
         cidr_blocks      = var.ssh_approved_ips
     }
 
+    # MQTT access
+    ingress {
+        from_port        = 1883
+        to_port          = 1883
+        protocol         = "tcp"
+        cidr_blocks      = ["0.0.0.0/0"] # Anyone on the internet can connect!
+    }
+
     # Allows local processes like e.g. docker to grab resources from the internet
     # will also allow ssh egress, webserver egress, etc.
     egress {
