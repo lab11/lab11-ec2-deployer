@@ -91,7 +91,7 @@ IMPORTANT NOTE #2: Related to the above, you should treat `project_name` and `en
 
 IMPORTANT NOTE #3: The SSH key for the instance cannot be changed through Terraform after the instance is created. To change the SSH keys you will need to modify the `~/.ssh/authorized_keys` file on the instance (either using Ansible or manually). Or, you can destroy the instance and create a new one with a new SSH key.
 
-IMPORTANT NOTE #4: If you are working with a team, note that there is only one set of approved IPs for the firewall and one SSH key, which could cause some issues. Some options to deal with this: 1) set the approved IPs list to contain the IP addresses of the whole team, and then use Ansible to add more SSH keys to the `authorized_keys` file on the instance after creation (see the branch `example/authorized-keys` for an example setup in the `post-creation` directory); or 2) set the approved IPs list to contain IP addresses of the whole team, and then create a new SSH key-pair for accessing this server and (securely) share it among the team.
+IMPORTANT NOTE #4: If you are working with a team, note that there is only one set of approved IPs for the firewall and one SSH key, which could cause some issues. Some options to deal with this: 1) set the approved IPs list to contain the IP addresses of the whole team, and then use Ansible to add more SSH keys to the `authorized_keys` file on the instance after creation (see the branch `example/authorized-keys`); or 2) set the approved IPs list to contain IP addresses of the whole team, and then create a new SSH key-pair for accessing this server and (securely) share it among the team.
 
 ## Additional variables
 
