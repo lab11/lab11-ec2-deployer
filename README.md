@@ -3,7 +3,7 @@ A Python3 script for automatically creating, configuring, and destroying EC2 ins
 
 # How to use this project
 
-* Create a new branch for your project named `project/<project_name>`
+* Fork the repo to create a deployer for your own project with separate access controls
 
 Once you have your own version to modify, these are the steps for running the project:
 
