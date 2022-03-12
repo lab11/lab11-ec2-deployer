@@ -1,0 +1,1 @@
+clone-git-repo.yaml repo_url="https://github.com/lab11/gateway-tools" dest_dir=/home/ec2-user/
