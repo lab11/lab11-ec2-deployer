@@ -1,5 +1,14 @@
 
-A Python3 script for automatically creating, configuring, and destroying EC2 instances using Terraform and Ansible.
+# Example: Automatically Cloning a Git Repo
+
+In this example, we create an EC2 instance and then automatically clone a Git repo. These are the changes to look for:
+
+* In `post-creation`: A new Ansible playbook called `clone-git-repo.yaml` that provides some variables for the repo URL and destination on the instance.
+* In `post-creation`: The file `fresh_installation_playbooks.txt` now contains `clone-git-repo.yaml` and variable arguments for cloning the Lab 11 gateway-tools repo which will automatically run after the instance is created.
+
+**To run:** Update `terraform/terraform.tfvars` with your SSH credentials and IP address. Run `python ec2_deployer.py apply`. After the script completes, SSH into the instance and confirm that the gateway-tools repo is present with `ls`. Congratulations, you have just automatically cloned a Github repo on AWS. Run `python ec2_deployer.py destroy` when you are done.
+
+Note: Ansible can also be used to atomatically install dependencies and run the application in the repo.
 
 # How to use this project
 
