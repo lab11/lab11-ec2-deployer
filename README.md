@@ -86,7 +86,7 @@ IMPORTANT NOTE #4: If you are working with a team, note that there is only one s
 
 ## Additional variables
 
-There are more variables you can change if desired. All possible variables are defined in `variables.tf`, along with any default values. This includes variables for the default region (us-west-1), the operating system/Amazon Machine Image for the EC2 instances (Amazon Linux), and so on. To override the defaults, simply add your definition of the variable to `terraform.tfvars`.
+There are more variables you can change if desired. All possible variables are defined in `variables.tf`, along with any default values. This includes variables for the default region (us-west-1), the operating system/Amazon Machine Image for the EC2 instances (Amazon Linux), the default interruption behavior for spot instances, and so on. To override the defaults, simply add your definition of the variable to `terraform.tfvars`.
 
 ## Firewall rules
 
