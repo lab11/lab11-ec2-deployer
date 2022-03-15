@@ -13,7 +13,7 @@ provider "aws" {
         tags = {
             Name = "${var.env_prefix}-${var.project_name}"
             Contact_email = var.contact_email
-            IAM_user = var.iam_user
+            Contact_name = var.contact_name
             Project = var.project_name
             Env = var.env_prefix
         }

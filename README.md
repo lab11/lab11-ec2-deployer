@@ -41,7 +41,7 @@ You can find the secrets for your user by using the IAM service's web interface.
 This project accesses the AWS credentials through environment variables. I created a local file called `~/.aws/profiles/meghan` which looks something like this:
 
 ```
-export TF_VAR_iam_user=meghan
+export TF_VAR_contact_name=Meghan
 export TF_VAR_contact_email=mclarkk@berkeley.edu
 export AWS_ACCESS_KEY_ID=***
 export AWS_SECRET_ACCESS_KEY=***

@@ -10,10 +10,10 @@ variable ssh_key_name {}
 variable ssh_public_key_file {}
 
 # Can be set in terraform.tfvars, however...
-# Preferably set through environment variable TF_VAR_iam_user and TF_VAR_contact_email
+# Preferably set through environment variable TF_VAR_contact_name and TF_VAR_contact_email
 # along with the AWS secrets associated with that user
 # See the README for details
-variable iam_user {}
+variable contact_name {}
 variable contact_email {}
 
 # Operating system
