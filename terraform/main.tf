@@ -100,6 +100,7 @@ module "ec2_instance" {
   spot_price           = var.spot_price_max 
   spot_type            = var.spot_type
   spot_wait_for_fulfillment = true
+  spot_instance_interruption_behavior = var.spot_instance_interruption_behavior
 
   ami                    = data.aws_ami.latest-amazon-linux-image.id
   instance_type          = var.instance_type

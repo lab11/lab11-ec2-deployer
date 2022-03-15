@@ -31,6 +31,9 @@ variable spot_price_max {
 variable spot_type {
     default =  "one-time" # "one-time" or "persistent"
 }
+variable spot_instance_interruption_behavior {
+    default = "hibernate" # hibernate, stop, or terminate
+}
 
 # Networking info
 variable region {
