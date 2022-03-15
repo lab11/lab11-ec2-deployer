@@ -29,10 +29,10 @@ variable spot_price_max {
     default = "0.05" # 0.05 dollar/hour x 730 hours/month = 36.50 dollars/month max
 }
 variable spot_type {
-    default =  "one-time" # "one-time" or "persistent"
+    default =  "one-time" # "one-time" or "persistent" ("persistent" must be used with "hibernate" below)
 }
 variable spot_instance_interruption_behavior {
-    default = "hibernate" # hibernate, stop, or terminate
+    default = "terminate" # "hibernate", "stop", or "terminate"
 }
 
 # Networking info
