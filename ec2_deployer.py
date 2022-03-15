@@ -238,7 +238,7 @@ def check_prerequisites():
 
     # check that AWS credentials are set
     print(subheading("Checking for AWS credentials"))
-    check_env_vars(["TF_VAR_iam_user", "TF_VAR_contact_email", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"])
+    check_env_vars(["TF_VAR_contact_name", "TF_VAR_contact_email", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"])
     print(separator)
 
     # Confirm that terraform.tfvars is accurate
