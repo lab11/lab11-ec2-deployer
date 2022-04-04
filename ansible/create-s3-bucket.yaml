@@ -11,4 +11,6 @@
       ignore_nonexistent_bucket: true
     register: create_op
 
+  - debug: msg='Bucket name is {{bucket_name}}'
+
   - debug: msg={{create_op.msg}}
