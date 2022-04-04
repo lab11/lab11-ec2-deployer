@@ -4,7 +4,7 @@
   tasks:
   - name: Gather info about all EC2 instances for this project
     amazon.aws.ec2_instance_info:
-    region: '{{region}}'
+      region: '{{region}}'
       filters:
         instance.group-name: '*-{{project_name}}-sg'
     register: project_ec2_instances
