@@ -82,7 +82,7 @@ def create_instances():
     if ("Bucket already exists" in ansible_output):
         print(heading("WARNING! Confirmation Needed", sym="#", margin=" ", has_pad=False))
         print("\nWARNING: An S3 bucket for storing Terraform remote state for this project already exists!\nThere are two possibilities:\n\n" \
-            + "1. S3 bucket names are global, so the name could already be taken by someone else, in which case you should change the project name to something more unique.\n" \
+            + "1. S3 bucket names are global across all AWS users, so the bucket name could already be taken by someone else. If so, you should change the project name to something more unique.\n" \
             + "2. This project already has infrastructure state associated with it, and Terraform will synchronize with the existing remote state.\n")
         confirm("Did you expect existing state for this project?")
     os.chdir("..")
@@ -227,13 +227,13 @@ def check_prerequisites():
     check_installed("terraform")
     print(separator)
 
-    print(subheading("Checking for Ansible installation"))
-    check_installed("ansible")
-    print(separator)
-
-    print(subheading("Checking for boto3 and botocore Python library installations"))
+    print(subheading("Checking for boto3 and botocore Python libraries"))
     check_module("boto3")
     check_module("botocore")
+    print(separator)
+
+    print(subheading("Checking for Ansible installation"))
+    check_installed("ansible")
     print(separator)
 
     # check that AWS credentials are set

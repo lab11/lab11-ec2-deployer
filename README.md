@@ -18,11 +18,10 @@ When you are completely done with your project and want to delete the instance(s
 # 0. Installation Requirements
 
 You will need to install: 
-- Python 3.7+. 
-- Terraform 
-- Ansible
+- Python 3.7+ and `pip`. (confirm with `python --version` and `pip --version`)
+- [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) (confirm with `terraform --version`)
 
-If you forget any prerequisites, the `ec2_deployer.py` script will let you know.
+Run `pip install -r requirements.txt` to install Ansible and other dependencies.
 
 # 1. Authenticate to AWS
 
