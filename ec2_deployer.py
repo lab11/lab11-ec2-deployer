@@ -116,10 +116,10 @@ def create_instances():
     project_name = terraform_config["project_name"]
     env_prefix = terraform_config["env_prefix"]
     region = terraform_config["region"]
-    IAM_user = os.getenv("TF_VAR_iam_user")
+    contact_name = os.getenv("TF_VAR_contact_name")
     contact_email = os.getenv("TF_VAR_contact_email")
     # Run ansible-playbook tag_ec2_instances.yaml --extra-vars "project_name={project_name} contact_email={contact_email}" etc.
-    ansible_vars = f"project_name={project_name} contact_email={contact_email} env={env_prefix} region={region} IAM_user={IAM_user}"
+    ansible_vars = f"project_name={project_name} contact_email={contact_email} env={env_prefix} region={region} contact_name={contact_name}"
     # Run command. If something goes wrong in this step, report error and IP addresses, then exit
     error_msg = summary_string(tf_bucket, public_ip_addresses, s, are) + "\n\nERROR: Something went wrong while tagging instances."
     ansible_output = execute(["ansible-playbook", "tag-ec2-instances.yaml", '--extra-vars', ansible_vars], error_msg)

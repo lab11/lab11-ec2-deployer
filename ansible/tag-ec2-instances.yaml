@@ -18,7 +18,7 @@
         Name: '{{env}}-{{project_name}}-server-{{i+1}}'
         Contact_email: '{{contact_email}}'
         Project: '{{project_name}}'
-        IAM_user: '{{IAM_user}}'
+        Contact_name: '{{contact_name}}'
         Env: '{{env}}'
 
     loop: '{{project_ec2_instances.instances}}'
